@@ -65,3 +65,7 @@ Where x and y are the coordinates of each block/target, and [c] is an optional c
 (More coming soon)
 
 Remember to align the block data and goal data for each level!
+
+### Tools:
+
+* searchalg.p8 (requires pico-8 software). uses breadth- or depth-first search to find a solution to a level. Currently supports regular blocks and stone blocks. Note that bfs mode will take much longer and sometimes runs out of memory, while dfs mode will often find inefficient solutions. to use: open in p8, change the tables _b_ and _g_ as before (note they only support a single level, not a table of levels) and call search() with single argument 1 or 0 (see comments in code). 
