@@ -68,4 +68,5 @@ Remember to align the block data and goal data for each level!
 
 ### Tools:
 
-* searchalg.p8 (requires pico-8 software). uses breadth- or depth-first search to find a solution to a level. Currently supports regular blocks and stone blocks. Note that bfs mode will take much longer and sometimes runs out of memory, while dfs mode will often find inefficient solutions. to use: open in p8, change the tables _b_ and _g_ as before (note they only support a single level, not a table of levels) and call search() with single argument 1 or 0 (see comments in code). 
+* bfs_dfs .p8 files (requires pico-8 software). uses breadth- or depth-first search to find a solution to a level. Currently supports regular blocks and stone blocks. Note that bfs mode will take much longer and sometimes runs out of memory, while dfs mode will often find inefficient solutions. to use: open in p8, change the tables _b_ and _g_ as before (note they only support a single level, not a table of levels) and call search() with single argument 1 or 0 (see comments in code).
+* priority bfs .p8 (requires pico-8 software). uses a modified bfs that calculates "best" direction to travel based on the initial layout. use single-level script as above. use multi-level script by entering each level and goal into tables _big_ and _bigg_ (note levels will not animate, only show times for each level). 
