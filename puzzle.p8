@@ -74,7 +74,7 @@ g={
 	}
 
 cf=1 -- cursor flashing
-mode="select" -- info screen flag
+mode="" -- info screen flag
 sx=0 sy=0 -- stored x/y for lock
 lock = 0 -- locked on block flag
 gf = 2 -- goal flashing
@@ -84,26 +84,64 @@ myl=1 --levels cleared
 ml=#b+1 -- max level+1
 re={} -- restart
 un={} -- undo
+ls_boxselect=1
+ls_levelstart=1
+ls_shift=-12
+ls_unlocked=1
 
 function _init()
 	cls()
 	palt(0, false)
 	palt(13, true)
+	for i=1,#b[l] do
+		if(#b[l][i]==2) then
+			re[i]={0,0}
+			re[i][1]=b[l][i][1]
+			re[i][2]=b[l][i][2]
+		elseif(#b[l][i]==3) then
+			re[i]={0,0,0}
+			re[i][1]=b[l][i][1]
+			re[i][2]=b[l][i][2]
+			re[i][3]=b[l][i][3]
+		end
+	end
 end
 
 function _draw()
+ cls()
 	if (mode=="select") then
-		cls()
-		for i=0, min(8,ml-l+2) do
-			c={6,7}
-			if(l%8==i) c={10,0} 
-			circfill(10,i*12+5,5,c[1])
-			circfill(70,i*12+5,5,c[1])
-			rectfill(10,i*12,70,i*12+10,c[1])
-			color(c[2])
-			print("level "..l+i,15,i*12+3)
-		end
 
+ --draw all level tabs
+	 for i=1,ml-1 do
+	 	circfill(7,5+12*i+ls_shift,5,6)
+			circfill(70,5+12*i+ls_shift,5,6)
+	 	rectfill(7,12*i+ls_shift,70,10+12*i+ls_shift,6)
+	 	print("level: "..i,16,3+12*i+ls_shift,0)
+	 end
+	 for i=ls_unlocked+1,ml-1 do
+	  spr(15,60,2+12*i+ls_shift)
+	 end
+	 
+	 --draw selected level tab
+	 rectfill(7,12*ls_boxselect-12,70,12*ls_boxselect-2,10)
+	 circfill(7,5+12*ls_boxselect-12,5,10)
+		circfill(70,5+12*ls_boxselect-12,5,10)
+
+	 print("level: "..l,16,-9+12*ls_boxselect,5)
+	 
+	 
+	 --draw preview level
+	 rectfill(80,32,128,80,1)
+	 for i=1,#g[l] do
+	  	spr(8,72+g[l][i][1]*8,24+g[l][i][2]*8)
+	 end
+	 for i=1,#b[l] do
+	  if #b[l][i]==2then
+	  	spr(7,72+b[l][i][1]*8,24+b[l][i][2]*8)
+	  elseif#b[l][i]==3and b[l][i][3]==1 then 
+	  	spr(14,72+b[l][i][1]*8,24+b[l][i][2]*8)	  
+	  end
+	 end	 
 	elseif (mode=="tutorial") then
 		tutorial_design()
 	elseif(l==ml) then
@@ -157,6 +195,29 @@ end
 
 function _update()
 
+ if mode=="select" then
+ 	if btnp(4) then press_c()return end
+ 	if btnp(2)and l>1 then
+ 	 l-=1
+ 	 ls_boxselect-=1
+ 	 if ls_boxselect<3 and ls_shift<=-12and l>2then
+ 			ls_shift+=12
+ 			ls_boxselect+=1
+   end
+ 	elseif btnp(3)and l<ml-1 and l<ls_unlocked then
+ 	 l+=1
+ 	 ls_boxselect+=1
+ 	 if ls_boxselect>7 and ml-l>2then
+ 			ls_shift-=12
+ 			ls_boxselect-=1
+ 		end
+ 	 if ls_levelstart+3>l and ls_levelstart>1then
+ 	  ls_levelstart-=1
+ 	 end
+ 	end
+ 	return
+ end
+
 	if (l==ml) return -- done
 	t+=1-- framecount
 	
@@ -172,11 +233,15 @@ function _update()
 		
 	if (gnum==#g[l])	then
 		l+=1
+		if l>ls_unlocked then
+			ls_unlocked=l
+		end
 		if (l==ml) then 
 			return
 		end
 			x=g[l][1][1]*16
 			y=g[l][1][2]*16
+			b[l-1]=re
 			re={}
 			un={}
 			for i=1,#b[l] do
@@ -477,9 +542,14 @@ function buttons()
 		cf=1
 		lock=0
 		sx=-1 sy=-1
-		return 1	
+		return 1
+	--level select button	
 	elseif(x/16==0 and y/16==3)then
 		mode="select"
+		b[l]=re
+		ls_boxselect=min(7,l)
+  ls_levelstart=max(1,l-6)
+  ls_shift=-ls_levelstart*12
 		cf=1
 		lock=0
 		sx=-1 sy=-1
@@ -491,6 +561,8 @@ function press_c()
 if(mode=="tutorial" or mode=="select")then
 			mode="level"
 			re={}
+			x=g[l][1][1]*16
+			y=g[l][1][2]*16
 			for i=1,#b[l] do
 				if(#b[l][i]==2) then
 					re[i]={0,0}
@@ -547,14 +619,14 @@ function press_x()
 		end
 end
 __gfx__
-0000000077777ddd111111116666666611111111eeeeeeee00000000eeeeeeee6666666600000000ddddddddddddddddeeeeeeeeeeeeeeee0000000000000000
-0000000077777ddd111111116666666611111111eeeeeeee00000000e666666e6111111600000000ddddddddddddddddeeeeeeeeeeeeeeee0000000000000000
-0070070077dddddd111166666611111111111111ee66666600000000e666666e6166661600000000ddaaaaddddddddddeeaaaaaaee1111110000000000000000
-0007700077dddddd111166666611111111111111ee66666600000000e666666e6161161600000000ddaaaaddddddddddeeaaaaaaee1111110000000000000000
-0007700077dddddd116611116611666611111111ee66666600000000e666666e6161161600000000ddaaddddddddddddeeaaaaaaee1111110000000000000000
-00700700dddddddd116611116611666611111111ee66666600000000e666666e6166661600000000ddaaddddddddddddeeaaaaaaee1111110000000000000000
-00000000dddddddd116611666611661111111111ee66666600000000e666666e6111111600000000ddddddddddddddaaeeaaaaaaee1111110000000000000000
-00000000dddddddd116611666611661111111111ee66666600000000eeeeeeee6666666600000000ddddddddddddddaaeeaaaaaaee1111110000000000000000
+0000000077777ddd111111116666666611111111eeeeeeee00000000eeeeeeee6666666600000000ddddddddddddddddeeeeeeeeeeeeeeeeeeeeeeee66aaaa66
+0000000077777ddd111111116666666611111111eeeeeeee00000000e666666e6111111600000000ddddddddddddddddeeeeeeeeeeeeeeeee000000e66a66a66
+0070070077dddddd111166666611111111111111ee66666600000000e666666e6166661600000000ddaaaaddddddddddeeaaaaaaee111111e000000e66a66a66
+0007700077dddddd111166666611111111111111ee66666600000000e666666e6161161600000000ddaaaaddddddddddeeaaaaaaee111111e000000e6aaaaaa6
+0007700077dddddd116611116611666611111111ee66666600000000e666666e6161161600000000ddaaddddddddddddeeaaaaaaee111111e000000e6aaaaaa6
+00700700dddddddd116611116611666611111111ee66666600000000e666666e6166661600000000ddaaddddddddddddeeaaaaaaee111111e000000e6aaaaaa6
+00000000dddddddd116611666611661111111111ee66666600000000e666666e6111111600000000ddddddddddddddaaeeaaaaaaee111111e000000e6aaaaaa6
+00000000dddddddd116611666611661111111111ee66666600000000eeeeeeee6666666600000000ddddddddddddddaaeeaaaaaaee111111eeeeeeee66666666
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
