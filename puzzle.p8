@@ -120,13 +120,12 @@ function _draw()
  	print(txt,64-#txt*2,100)
  	
 	elseif (mode=="select") then
-
  --draw all level tabs
 	 for i=1,ml-1 do
 	 	--circfill(15,71+12*i+ls_shift,5,6)
 			--circfill(113,71+12*i+ls_shift,5,6)
 	 	--rectfill(15,12*i+ls_shift+66,113,76+12*i+ls_shift,6)
-	 	print("level: "..i,16,69+12*i+ls_shift,6)
+	 	print("level "..i,16,69+12*i+ls_shift,6)
 	 end
 	 for i=ls_unlocked+1,ml-1 do
 	  spr(15,90,68+12*i+ls_shift)
@@ -137,7 +136,7 @@ function _draw()
 	 circfill(12,71+12*ls_boxselect-12,5,10)
 		circfill(116,71+12*ls_boxselect-12,5,10)
 
-	 print("level: "..l,16,57+12*ls_boxselect,0)
+	 print("level "..l,16,57+12*ls_boxselect,0)
 	 
 	 
 	 --draw preview level
@@ -165,6 +164,19 @@ function _draw()
 		color(7)
 		txt="level "..l
 		print(txt, 64-#txt*2, 4)
+		
+		if(x==0) then
+			if (y/16==1) then
+				txt="exit to level select"
+			elseif(y/16==2) then
+				txt="want a hint?"
+			elseif(y/16==3) then
+				txt="restart level"
+			end	
+		else
+			txt="c to select, x to undo"
+		end
+		print(txt, 64-#txt*2, 118)
 		
 		-- goal sprite
 		for i=1, #g[l] do
@@ -521,21 +533,18 @@ end
 function tutorial_design()
 	cls()
 	color(7)
-	print("goal: get a bl to all g", 10, 10)
-	print("   are pushed by neighbors", 10, 24)	
-	print("becomes    >",40,38)
-	print("use arrow keys to move", 10, 66)
+	print("goal: get a bl to all g", 10, 10)	
+	print("becomes    >",40,24)
+	print("arrows move", 10, 66)
 	print("press x to undo", 10, 80)
-	color(11)
-	print("press c to select/push", 10, 100)
+	color(10)
+	print("press c to select", 10, 100)
 	spr(8,96,8)
 	spr(7,58,8)
-	spr(7,10,22)
-	spr(7,20,36)
-	spr(7,28,36)
-	spr(7,72,36)
-	spr(7,90,36)
-	spr(7,102,98)
+	spr(7,20,22)
+	spr(7,28,22)
+	spr(7,72,22)
+	spr(7,90,22)
 end
 	
 function buttons()
