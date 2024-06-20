@@ -86,7 +86,7 @@ un={} -- undo
 ls_boxselect=1
 ls_levelstart=1
 ls_shift=-12
-ls_unlocked=1
+ls_unlocked=ml-1
 
 function _init()
 	cls()
@@ -225,7 +225,7 @@ function _update()
  	if btnp(2)and l>1 then
  	 l-=1
  	 ls_boxselect-=1
- 	 if ls_boxselect<3 and ls_shift<=-12 and l>1then
+ 	 if ls_boxselect<3 and ls_shift<=-24 and l>1then
  			ls_shift+=12
  			ls_boxselect+=1
    end
@@ -569,8 +569,14 @@ function buttons()
 	elseif(x/16==0 and y/16==1)then
 		mode="select"
 		b[l]=re
-		ls_boxselect=min(7,l)
-  ls_levelstart=max(1,l-6)
+		ls_boxselect=min(3,l)
+		if ml-l <= 2 then
+			ls_boxselect=6-(ml-l)
+		end
+  ls_levelstart=max(1,l-2)
+		if ml-l <= 2 then
+			ls_levelstart=ml-5
+		end
   ls_shift=-ls_levelstart*12
 		cf=1
 		lock=0
