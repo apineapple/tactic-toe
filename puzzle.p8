@@ -65,7 +65,7 @@ g={
 	{{6,6}},
 	{{4,6}},
 	{{3,6}},
- 	{{6,1}}, --made by ben
+ {{6,1}}, --made by ben
 	{{5,1}},
 	{{2,2}},
 	{{1,2},{5,1},{4,3}},
@@ -334,197 +334,23 @@ end
 --reg block behavior
 function arrows()
 
-	two=0
-	-- top left
-	if x/16!=1 and y/16!=1 then
-		for i = 1,#b[l] do
-			tx=b[l][i][1]*16
-			ty=b[l][i][2]*16
-			
-			if x-16==tx and y-16==ty then
-				two = 0 
-				break
-			elseif x+16==tx and y+16==ty then
-				two=2	
-			elseif x+16==tx and y==ty then
-				two+=1
-			elseif x==tx and y+16==ty then
-				two+=1
+	ai=0
+	for dx=-1,1 do 
+		for dy=-1,1 do
+			if not(dx==0 and dy==0) then
+				ai+=1
+				if (not contains(b[l],(x/16)+dx,(y/16)+dy)) and(inbounds((x/16)+dx,(y/16)+dy)) then
+					if (contains(b[l],(x/16)-dx,(y/16)-dy) or 
+					((dy == 0) and (contains(b[l],(x/16)-dx,(y/16)+1) and contains(b[l],(x/16)-dx,(y/16)-1))) or
+	    ((dx == 0) and (contains(b[l],(x/16)+1,(y/16)-dy) and contains(b[l],(x/16)-1,(y/16)-dy))) or
+	    ((dx != 0 and dy != 0) and (contains(b[l],(x/16),(y/16)-dy) and contains(b[l],(x/16)-dx,(y/16)))) ) then
+	     a[ai][1]=(x+(16*dx))/16
+						a[ai][2]=(y+(16*dy))/16
+	    end
+	   end
 			end
 		end
-		if (two>=2) then 
-			a[1][1]=(x-16)/16 
-			a[1][2]=(y-16)/16 
-		end
-	end
-	
-	two=0
-	-- top middle
-	if y/16!=1 then
-		for i = 1,#b[l] do
-			tx=b[l][i][1]*16
-			ty=b[l][i][2]*16
-			
-			if x==tx and y-16==ty then
-				two=0 
-				break
-			elseif x==tx and y+16==ty then
-				two=2	
-			elseif x-16==tx and y+16==ty then
-				two+=1
-			elseif x+16==tx and y+16==ty then
-				two+=1
-			end
-		end
-		if (two>=2) then
-			a[2][1]=x/16
-			a[2][2]=(y-16)/16
-		end
-	end
-	
-	two=0
-	-- top right
-	if x/16!=6 and y/16!=1 then
-		for i = 1,#b[l] do
-			tx=b[l][i][1]*16
-			ty=b[l][i][2]*16
-			
-			if x+16==tx and y-16==ty then
-				two = 0 
-				break
-			elseif x-16==tx and y+16==ty then
-				two=2	
-			elseif x-16==tx and y==ty then
-				two+=1
-			elseif x==tx and y+16==ty then
-				two+=1
-			end
-		end
-		if (two>=2) then
-			a[3][1]=(x+16)/16
-			a[3][2]=(y-16)/16
-		end
-	end
-	
-	two=0
-	-- middle left
-	if  x/16!=1 then
-		for i = 1,#b[l] do
-			tx=b[l][i][1]*16
-			ty=b[l][i][2]*16
-			
-			if x-16==tx and y==ty then
-				two = 0 
-				break
-			elseif x+16==tx and y==ty then
-				two=2	
-			elseif x+16==tx and y-16==ty then
-				two+=1
-			elseif x+16==tx and y+16==ty then
-				two+=1
-			end
-		end
-		if (two>=2) then
-			a[4][1]=(x-16)/16
-			a[4][2]=y/16
-		end
-	end
-	
-	two=0
-	-- middle right
-	if  x/16!=6 then
-		for i = 1,#b[l] do
-			tx=b[l][i][1]*16
-			ty=b[l][i][2]*16
-			
-			if x+16==tx and y==ty then
-				two = 0 
-				break
-			elseif x-16==tx and y==ty then
-				two=2	
-			elseif x-16==tx and y-16==ty then
-				two+=1
-			elseif x-16==tx and y+16==ty then
-				two+=1
-			end
-		end
-		if (two>=2) then
-			a[5][1]=(x+16)/16
-			a[5][2]=y/16
-		end
-	end
-	
-	two=0
-	-- bottom left
-	if  x/16!=1 and y/16!=6 then
-		for i = 1,#b[l] do
-			tx=b[l][i][1]*16
-			ty=b[l][i][2]*16
-			
-			if x-16==tx and y+16==ty then
-				two = 0 
-				break
-			elseif x+16==tx and y-16==ty then
-				two=2	
-			elseif x==tx and y-16==ty then
-				two+=1
-			elseif x+16==tx and y==ty then
-				two+=1
-			end
-		end
-		if (two>=2) then
-			a[6][1]=(x-16)/16
-			a[6][2]=(y+16)/16
-		end
-	end
-
-	two=0
-	-- bottom middle
-	if  y/16!=6 then
-		for i = 1,#b[l] do
-			tx=b[l][i][1]*16
-			ty=b[l][i][2]*16
-			
-			if x==tx and y+16==ty then
-				two = 0 
-				break
-			elseif x==tx and y-16==ty then
-				two=2	
-			elseif x-16==tx and y-16==ty then
-				two+=1
-			elseif x+16==tx and y-16==ty then
-				two+=1
-			end
-		end
-		if (two>=2) then
-			a[7][1]=x/16
-			a[7][2]=(y+16)/16
-		end
-	end
-	
-	two=0
-	-- bottom right
-	if  x/16!=6 and y/16!=6 then
-		for i = 1,#b[l] do
-			tx=b[l][i][1]*16
-			ty=b[l][i][2]*16
-			
-			if x+16==tx and y+16==ty then
-				two = 0 
-				break
-			elseif x-16==tx and y-16==ty then
-				two=2	
-			elseif x-16==tx and y==ty then
-				two+=1
-			elseif x==tx and y-16==ty then
-				two+=1
-			end
-		end
-		if (two>=2) then
-			a[8][1]=(x+16)/16
-			a[8][2]=(y+16)/16
-		end
-	end
+	end	
 end
 
 function tutorial_design()
@@ -644,6 +470,29 @@ function press_x()
 			lock=0
 			sx=-1 sy=-1
 		end
+end
+
+
+function contains(board,px,py)
+	if (px>7or px<1or py>7or py<1) then
+		return false
+	end
+	
+	for i=1,#board do
+		if (board[i][1]==px) and (board[i][2]==py) then
+		 return true
+		end
+	end
+	
+	return false
+end
+
+function inbounds(px,py)
+ if (px>6or px<1or py>6or py<1) then
+ 	return false
+ else 
+ 	return true
+ end
 end
 __gfx__
 0000000077777ddd111111116666666611111111eeeeeeee00000000eeeeeeee6666666600000000ddddddddddddddddeeeeeeeeeeeeeeeeeeeeeeee00666600
