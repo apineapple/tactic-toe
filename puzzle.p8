@@ -78,7 +78,7 @@ mode="title" -- info screen flag
 sx=0 sy=0 -- stored x/y for lock
 lock = 0 -- locked on block flag
 gf = 2 -- goal flashing
-x=16 y=16 -- position (in tiles)
+x=1 y=1 -- position (in tiles)
 t=0 -- timer
 ml=#b+1 -- max level+1
 re={} -- restart
@@ -163,11 +163,11 @@ function _draw()
 		print(txt, 64-#txt*2, 4)
 		
 		if(x==0) then
-			if (y/16==1) then
+			if (y==1) then
 				txt="exit to level select"
-			elseif(y/16==2) then
+			elseif(y==2) then
 				txt="want a hint?"
-			elseif(y/16==3) then
+			elseif(y==3) then
 				txt="restart level"
 			end	
 		else
@@ -186,7 +186,7 @@ function _draw()
 		-- block sprite
 		for i=1, #b[l] do
 			bbl=5
-			if(sx/16==b[l][i][1] and sy/16==b[l][i][2]) then
+			if(sx==b[l][i][1] and sy==b[l][i][2]) then
 				bbl=12 -- lock
 			elseif(#b[l][i]==3 and b[l][i][3]==1) then
 				bbl=13 -- stone
@@ -208,10 +208,10 @@ function _draw()
 				end
 			end
 		end
-		spr(cf,x,y)
-		spr(cf,x+8,y,1,1,true,false)
-		spr(cf,x,y+8,1,1,false,true)
-		spr(cf,x+8,y+8,1,1,true,true)
+		spr(cf,x*16,y*16)
+		spr(cf,x*16+8,y*16,1,1,true,false)
+		spr(cf,x*16,y*16+8,1,1,false,true)
+		spr(cf,x*16+8,y*16+8,1,1,true,true)
 	end
 end
 
@@ -261,8 +261,8 @@ function _update()
 		if (l==ml) then 
 			return
 		end
-			x=g[l][1][1]*16
-			y=g[l][1][2]*16
+			x=g[l][1][1]
+			y=g[l][1][2]
 			b[l-1]=re
 			re={}
 			un={}
@@ -285,10 +285,10 @@ function _update()
 		if (btnp(⬆️) and l-1!=0) l-=1
 		if (btnp(⬇️) and l+1!=ml) l+=1		
 	elseif (lock == 0) then
-		if (btnp(⬅️) and (x/16>1 or (x/16==1 and y/16<4))) x-=16
-		if (btnp(➡️) and x/16!=6) x+=16
-		if (btnp(⬆️) and y/16!=1) y-=16
-		if (btnp(⬇️) and ((y/16<6 and x/16>0) or y/16<3)) y+=16
+		if (btnp(⬅️) and (x>1 or (x==1 and y<4))) x-=1
+		if (btnp(➡️) and x!=6) x+=1
+		if (btnp(⬆️) and y!=1) y-=1
+		if (btnp(⬇️) and ((y<6 and x>0) or y<3)) y+=1
 	
 		if (btnp(⬅️) or btnp(➡️) or btnp(⬆️) or btnp(⬇️)) then
 			if (gf==2) then gf = 3
@@ -300,12 +300,12 @@ function _update()
 	else
 		gf=2
   		rx=x ry=y
-		if (btnp(⬆️)) ry=y-16
-		if (btnp(⬅️)) rx=x-16
-		if (btnp(➡️)) rx=x+16
-		if (btnp(⬇️) ) ry=y+16
+		if (btnp(⬆️)) ry=y-1
+		if (btnp(⬅️)) rx=x-1
+		if (btnp(➡️)) rx=x+1
+		if (btnp(⬇️) ) ry=y+1
 			
-		if((sx/16!=1 and rx==sx-16)or(rx==sx)or(sx/16!=6 and rx==sx+16))and((sy/16!=1 and ry==sy-16)or(ry==sy)or(sy/16!=6 and ry==sy+16)) then
+		if((sx!=1 and rx==sx-1)or(rx==sx)or(sx!=6 and rx==sx+1))and((sy!=1 and ry==sy-1)or(ry==sy)or(sy!=6 and ry==sy+1)) then
 			x=rx y=ry
 		end
 
@@ -339,13 +339,13 @@ function arrows()
 		for dy=-1,1 do
 			if not(dx==0 and dy==0) then
 				ai+=1
-				if (not contains(b[l],(x/16)+dx,(y/16)+dy)) and(inbounds((x/16)+dx,(y/16)+dy)) then
-					if (contains(b[l],(x/16)-dx,(y/16)-dy) or 
-					((dy == 0) and (contains(b[l],(x/16)-dx,(y/16)+1) and contains(b[l],(x/16)-dx,(y/16)-1))) or
-	    ((dx == 0) and (contains(b[l],(x/16)+1,(y/16)-dy) and contains(b[l],(x/16)-1,(y/16)-dy))) or
-	    ((dx != 0 and dy != 0) and (contains(b[l],(x/16),(y/16)-dy) and contains(b[l],(x/16)-dx,(y/16)))) ) then
-	     a[ai][1]=(x+(16*dx))/16
-						a[ai][2]=(y+(16*dy))/16
+				if (not contains(b[l],x+dx,y+dy)) and(inbounds(x+dx,y+dy)) then
+					if (contains(b[l],x-dx,y-dy) or 
+					((dy == 0) and (contains(b[l],x-dx,y+1) and contains(b[l],x-dx,y-1))) or
+	    ((dx == 0) and (contains(b[l],x+1,y-dy) and contains(b[l],x-1,y-dy))) or
+	    ((dx != 0 and dy != 0) and (contains(b[l],x,y-dy) and contains(b[l],x-dx,y))) ) then
+	     a[ai][1]=x+dx
+						a[ai][2]=y+dy
 	    end
 	   end
 			end
@@ -372,7 +372,7 @@ end
 	
 function buttons()
 	--restart button
-	if(x/16==0 and y/16==3)then
+	if(x==0 and y==3)then
 		for i=1,#b[l] do
 			b[l][i][1]=re[i][1]
 			b[l][i][2]=re[i][2]
@@ -382,14 +382,14 @@ function buttons()
 		sx=-1 sy=-1
 		return 1
 	--tutorial button
-	elseif(x/16==0 and y/16==2)then
+	elseif(x==0 and y==2)then
 		mode="tutorial"
 		cf=1
 		lock=0
 		sx=-1 sy=-1
 		return 1
 	--level select button	
-	elseif(x/16==0 and y/16==1)then
+	elseif(x==0 and y==1)then
 		mode="select"
 		b[l]=re
 		ls_boxselect=min(3,l)
@@ -414,8 +414,8 @@ if (mode=="title") then
 elseif(mode=="tutorial" or mode=="select")then
 			mode="level"
 			re={}
-			x=g[l][1][1]*16
-			y=g[l][1][2]*16
+			x=g[l][1][1]
+			y=g[l][1][2]
 			for i=1,#b[l] do
 				if(#b[l][i]==2) then
 					re[i]={0,0}
@@ -430,12 +430,12 @@ elseif(mode=="tutorial" or mode=="select")then
 			end
 		elseif (lock==1) then
 		 for j=1,#a do		 
-		 	if (x/16==a[j][1] and y/16==a[j][2]) then
+		 	if (x==a[j][1] and y==a[j][2]) then
 				 for i = 1,#b[l] do
-						if sx==b[l][i][1]*16 and sy==b[l][i][2]*16 then
+						if sx==b[l][i][1] and sy==b[l][i][2] then
 							add(un,{b[l][i][1],b[l][i][2],i})
-							b[l][i][1]=(x/16)
-							b[l][i][2]=(y/16)
+							b[l][i][1]=x
+							b[l][i][2]=y
 						end
 					end
 					break
@@ -446,7 +446,7 @@ elseif(mode=="tutorial" or mode=="select")then
 		else
 			if (buttons()!=1) then
 			for i = 1,#b[l] do
-				if (x==b[l][i][1]*16 and y==b[l][i][2]*16 and #b[l][i]==2) then
+				if (x==b[l][i][1] and y==b[l][i][2] and #b[l][i]==2) then
 					lock=1
 					sx=x sy=y
 					a={{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}}
