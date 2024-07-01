@@ -1,6 +1,6 @@
 # Tactic-Toe
 
-A block-pushing puzzle game developed by Ben Gottlieb. 
+A block-pushing puzzle game developed by Ben Go ldstein/ttlieb. 
 
 Use arrow keys to move the cursor, *c* to select/move blocks, and *x* to undo. 
 
