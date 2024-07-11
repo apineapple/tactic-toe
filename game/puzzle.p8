@@ -43,8 +43,8 @@ ls_boxselect=1
 ls_levelstart=1
 ls_shift=-12
 t_step=0
---ls_unlocked[1]=#lvls[1]
 --ls_unlocked[2]=#lvls[2]
+--ls_unlocked[3]=#lvls[3]
 
 function _init()
 	cls()
@@ -135,6 +135,9 @@ function _draw()
 		cls()
 		map()
 		rectfill(16,16,112,112,1)
+		spr(36,0,16,2,2)
+		spr(32,0,32,2,2)
+		spr(34,0,48,2,2)
 		color(7)
 		txt="level "..l[lp]
 		print(txt, 64-#txt*2, 4)
@@ -191,6 +194,8 @@ function _draw()
 end
 
 function _update()
+
+	if(lock==0) cf=38 sx=-1 sy=-1 
 
  if mode=="select" then
   if (lp==1) mode="tutorial" x=2 y=4 
@@ -382,28 +387,22 @@ function buttons()
 			b[l[lp]][i][1]=re[i][1]
 			b[l[lp]][i][2]=re[i][2]
 		end
-		cf=38
 		lock=0
-		sx=-1 sy=-1
 		return 1
 	--hint button
 	elseif(x==0 and y==2)then
 		mode="hint"
-		cf=38
 		lock=0
-		sx=-1 sy=-1
 		return 1
 	--level select button	
 	elseif(x==0 and y==1)then
 		mode="select"
+		setup_ls()
 		for i=1,#b[l[lp]] do
 			b[l[lp]][i][1]=re[i][1]
 			b[l[lp]][i][2]=re[i][2]
 		end
-		setup_ls()
-		cf=38
 		lock=0
-		sx=-1 sy=-1
 	end
 	return 0
 end
@@ -443,8 +442,7 @@ elseif(mode=="hint" or mode=="select")then
 					break
 				end
 			end
-			cf=38 lock=0 rock=0
-			sx=-1 sy=-1
+			lock=0 rock=0
 		else
 			if (buttons()!=1) then
 			for i=g+1,#b[l[lp]] do
@@ -468,15 +466,15 @@ function press_x()
 		if(mode=="select")then
 			mode="lpack"
    lpshift=-80*(lp-1)
+		elseif(mode=="level" and lock==1) then
+			lock=0
 		elseif(mode=="level"and #un>0) then
 			b[l[lp]][un[#un][3]][1]=un[#un][1]
 			b[l[lp]][un[#un][3]][2]=un[#un][2]
 			deli(un,#un)
-			cf=38
 			lock=0
-			sx=-1 sy=-1
 		end
-end
+ end
 
 
 function contains(px,py)

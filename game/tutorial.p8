@@ -156,7 +156,6 @@ function update_tutorial()
 	elseif(t_step==14) then
 		if(btnp(4) and x==5 and y==3) t_step=15
 	
-	
 	end
 	
 end
