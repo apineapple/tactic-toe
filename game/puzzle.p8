@@ -6,6 +6,7 @@ __lua__
 
 #include levels.p8
 #include tutorial.p8	
+#include parts.p8
 
 --availble blocks
 a={{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}}
@@ -27,6 +28,8 @@ lp=1
 l={}
 ml={}
 ls_unlocked={}
+currwon=false
+mselect=1
 lpdone={}
 for i=1,#lvls do
 		l[i]=1
@@ -48,14 +51,10 @@ t_step=0
 
 function _init()
 	cls()
+	set_g()
+	set_re()
 	palt(0, false)
 	palt(13, true)
-	for i=1,#b[l[lp]] do
-		re[i]={0,0,0}
-		re[i][1]=b[l[lp]][i][1]
-		re[i][2]=b[l[lp]][i][2]
-		re[i][3]=b[l[lp]][i][3]
-	end
 end
 
 function _draw()
@@ -120,17 +119,7 @@ function _draw()
 			 rect(lpshift+34+(i-1)*80,33,lpshift+95+(i-1)*80,94,10)
 			end
 	 end
-	elseif(mode=="level"and l[lp]==ml[lp]) then
-		cls()
-		mode="lpack"
-  lpshift=-80*(lp-1)
-  b[l[lp]-1]=re
-  l[lp]=1
-  ls_boxselect=1
-		ls_levelstart=1
-		ls_shift=-12
-		lpdone[lp]=true
-  
+	 rectfill(lpshift+47,98,lpshift+82,108,0)
 	elseif mode=="level" then
 		cls()
 		map()
@@ -190,11 +179,26 @@ function _draw()
 			end
 		end
 		spr(cf,x*16,y*16,2,2)
+		if(mode=="level"and(l[lp]==ml[lp]or currwon)) then
+			parts_draw()
+		 rect(33,53,95,87,5)
+		 rectfill(34,54,94,86,0)
+		 for i=1,3 do
+		 	rectfill(36,46+10*i,92,54+10*i,5)
+		 end
+	 	rectfill(36,46+10*mselect,92,54+10*mselect,10)
+			if l[lp]+1 == ml[lp] then
+				print("continue",38,58,6)
+			else
+				print("next level",38,58,6)
+			end
+			print("level select",38,68,6)
+			print("redo level",38,78,6)
+		end
 	end
 end
 
 function _update()
-
 	if(lock==0) cf=38 sx=-1 sy=-1 
 
  if mode=="select" then
@@ -203,11 +207,7 @@ function _update()
  	if (btnp(5)) press_x()return
  	if btnp(2)and l[lp]>1 then
  	 l[lp]-=1
- 	 g=0
- 	 for i=1,#b[l[lp]] do
-				if(b[l[lp]][i][3]!=-1) break
-				g+=1
-			end	
+ 	 set_g()
  	 ls_boxselect-=1
  	 if ls_boxselect<3 and ls_shift<=-24 and l[lp]>1then
  			ls_shift+=12
@@ -215,11 +215,7 @@ function _update()
    end
  	elseif btnp(3)and l[lp]<ml[lp]-1 and l[lp]<ls_unlocked[lp] then
  	 l[lp]+=1
- 	 g=0
- 	 for i=1,#b[l[lp]] do
-				if(b[l[lp]][i][3]!=-1) break
-				g+=1
-			end
+ 	 set_g()
  	 ls_boxselect+=1
  	 if ls_boxselect>3 and ml[lp]-l[lp]>2then
  			ls_shift-=12
@@ -229,10 +225,8 @@ function _update()
  	  ls_levelstart-=1
  	 end
  	end
- 	return
- end
- 
- if mode=="lpack" then
+ 	return 
+ elseif mode=="lpack" then
   if(btnp(1)and lp<#lplogos) then
    lp+=1
    b=lvls[lp]
@@ -240,9 +234,7 @@ function _update()
    lp-=1
    b=lvls[lp]
   end
- end
-
-	if mode=="tutorial" then
+	elseif mode=="tutorial" then
 		update_tutorial()
 	end
 
@@ -260,46 +252,43 @@ function _update()
 		end
 		
 	if (gnum==g)	then
-		l[lp]+=1
-		if (l[lp]==ml[lp]) then 
+		if not currwon then
+			parts_init()
+			mselect=1
+			currwon=true
+			if l[lp]>ls_unlocked[lp] then
+				ls_unlocked[lp]=l[lp]
+			end
+			return
+		else
+			parts_update()
+			if(btnp(⬆️)and mselect>1) mselect-=1
+			if(btnp(⬇️)and mselect<3)mselect+=1
+			if(btnp(🅾️)) press_c()
 			return
 		end
-		g=0
-		for i=1,#b[l[lp]] do
-			if(b[l[lp]][i][3]!=-1) break
-			g+=1
-		end
+  set_g()
 		if l[lp]>ls_unlocked[lp] then
 			ls_unlocked[lp]=l[lp]
 		end
-			x=b[l[lp]][1][1]
-			y=b[l[lp]][1][2]
-			b[l[lp]-1]=re
-			re={}
-			un={}
-			for i=1,#b[l[lp]] do
-				re[i]={0,0,0}
-				re[i][1]=b[l[lp]][i][1]
-				re[i][2]=b[l[lp]][i][2]
-				re[i][3]=b[l[lp]][i][3]
-			end
+		x=b[l[lp]][1][1]
+		y=b[l[lp]][1][2]
+		b[l[lp]-1]=re
+		un={}
+  set_re()
 	end
 	
 	--movement not locked
 	if(mode=="select") then
 		if (btnp(⬆️) and l[lp]-1!=0) l[lp]-=1
 		if (btnp(⬇️) and l[lp]+1!=ml[lp]) l[lp]+=1
-		g=0
-		for i=1,#b[l[lp]] do
-			if(b[l[lp]][i][3]!=-1) break
-			g+=1
-		end		
+  set_g()
 	elseif (lock == 0) then
 		if (btnp(⬅️) and (x>1 or (x==1 and y<4))) x-=1
 		if (btnp(➡️) and x!=6) x+=1
 		if (btnp(⬆️) and y!=1) y-=1
 		if (btnp(⬇️) and ((y<6 and x>0) or y<3)) y+=1
-	
+		
 		if (btnp(⬅️) or btnp(➡️) or btnp(⬆️) or btnp(⬇️)) then
 			if (gf==42) then gf=44
 			elseif (gf==44) then gf=42
@@ -338,8 +327,8 @@ function _update()
 	--select
 	if (btnp(4)) then
 		press_c()
+	end
 end
-
 
 --reg block behavior
 function arrows()
@@ -414,35 +403,47 @@ elseif(mode=="lpack") then
 	mode="select"
 	setup_ls()
 elseif(mode=="hint" or mode=="select")then
-			mode="level"
-			re={}
-			x=b[l[lp]][1][1]
-			y=b[l[lp]][1][2]
-			for i=1,#b[l[lp]] do
-				re[i]={0,0,0}
-				re[i][1]=b[l[lp]][i][1]
-				re[i][2]=b[l[lp]][i][2]
-				re[i][3]=b[l[lp]][i][3]
-			end
-		elseif (lock==1) then
-		 for j=1,#a do		 
-		 	if (x==a[j][1] and y==a[j][2]) then
-				 for i=g+1,#b[l[lp]] do
-						if sx==b[l[lp]][i][1] and sy==b[l[lp]][i][2] then 
-							add(un,{b[l[lp]][i][1],b[l[lp]][i][2],i})
-							if (b[l[lp]][i][3]==2) then
-								qqx=x qqy=y
-								rocket() 
-								x=qqx y=qqy
-							end 
-							b[l[lp]][i][1]=x
-							b[l[lp]][i][2]=y
-						end
-					end
-					break
+	mode="level"
+	x=b[l[lp]][1][1]
+	y=b[l[lp]][1][2]
+ set_re()
+	set_g()
+elseif mode=="level" and currwon then
+	currwon=false
+ un={}
+ b[l[lp]]=re
+	if l[lp]>=ls_unlocked[lp] then
+		ls_unlocked[lp]=l[lp]+1
+	end
+	if mselect==1 and l[lp]+1 ==ml[lp] then
+		mode="lpack"
+	elseif mselect==1 then
+		l[lp]+=1
+	elseif mselect==2 then
+		mode="select"
+		setup_ls()
+	end
+ set_re()
+	set_g()
+elseif (lock==1) then
+ for j=1,#a do		 
+ 	if (x==a[j][1] and y==a[j][2]) then
+		 for i=g+1,#b[l[lp]] do
+				if sx==b[l[lp]][i][1] and sy==b[l[lp]][i][2] then 
+					add(un,{b[l[lp]][i][1],b[l[lp]][i][2],i})
+					if (b[l[lp]][i][3]==2) then
+						qqx=x qqy=y
+						rocket() 
+						x=qqx y=qqy
+					end 
+					b[l[lp]][i][1]=x
+					b[l[lp]][i][2]=y
 				end
 			end
-			lock=0 rock=0
+			break
+		end
+	end
+	lock=0 rock=0
 		else
 			if (buttons()!=1) then
 			for i=g+1,#b[l[lp]] do
@@ -456,7 +457,6 @@ elseif(mode=="hint" or mode=="select")then
 					end
 					break
 				end
-			end
 			end
 		end
 	end
@@ -524,6 +524,24 @@ function setup_ls()
 		ls_levelstart=ml[lp]-5
 	end
  ls_shift=-ls_levelstart*12
+end
+
+function set_g()
+ g=0
+	for i=1,#b[l[lp]] do
+		if(b[l[lp]][i][3]!=-1) break
+		g+=1	
+	end
+end
+
+function set_re()
+ re={}
+	for i=1,#b[l[lp]] do
+		re[i]={}
+		re[i][1]=b[l[lp]][i][1]
+		re[i][2]=b[l[lp]][i][2]
+		re[i][3]=b[l[lp]][i][3]
+	end
 end
 __gfx__
 0000000066666666eeeeeeeeeeeeeeeeeeeeeeee0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000

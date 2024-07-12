@@ -117,10 +117,19 @@ function draw_tutorial()
 		spr(66,48,48,2,2)
 		spr(66,80,48,2,2)
 		spr(38,x*16,y*16,2,2)
-		txt="you win!!"
-end
+		parts_init()
+		txt="you win!! press c to return."
+	elseif(t_step==16) then
+		x=5 y=3
+		spr(66,16,16,2,2)
+		spr(66,48,48,2,2)
+		spr(66,80,48,2,2)
+		spr(38,x*16,y*16,2,2)
+		parts_draw()
+		txt="you win!! press c to return."
+	end
 	
-	print(txt, 64-#txt*2, 118)
+	print(txt, 64-#txt*2, 118,7)
 	
 end
 
@@ -155,9 +164,12 @@ function update_tutorial()
 		if(btnp(4) and x==4 and y==3) t_step=14
 	elseif(t_step==14) then
 		if(btnp(4) and x==5 and y==3) t_step=15
-	
+	elseif(t_step==15) then
+	 t_step=16
+	elseif(t_step==16) then
+		parts_update()
+		if(btnp(4)) mode="title"
 	end
-	
 end
 
 function wait()
