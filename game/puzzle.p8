@@ -2,610 +2,1035 @@ pico-8 cartridge // http://www.pico-8.com
 version 42
 __lua__
 -- puzzle demo
--- puzzle demo
 -- by bens
 
 #include levels.p8
-#include tutorial.p8	
-#include parts.p8
-#include editor.p8
 
+ver="ver:0.7"
 --availble blocks
 a={{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}}
 -- blocks for levels
-cf=38 -- cursor flashing
+cf=38
+cft=0
 mode="title" -- info screen flag
 sx=0 sy=0 -- stored x/y for lock
 lock = 0 -- locked on block flag
-gf=44 -- goal flashing
 x=1 y=1 -- position (in tiles)
-t=0 -- timer
-re={} -- restart
+w=0 -- wait
 un={} -- undo
-rock=0
-qqx=-1 qqy=-1
+btype=""
 g=0
+cur=1
+restart=0
+dopamine=0
 lpshift=0
 lp=1
+t_mode=0
 l={}
-ml={}
-ls_unlocked={}
+ud=22
 currwon=false
 mselect=1
-lpdone={}
 for i=1,#lvls do
-		l[i]=1
-		ml[i]=#lvls[i]+1
-		ls_unlocked[i]=1
-		lpdone[i]=false
+		l[i]=0
 end
-b=lvls[lp]
-for i=1,#b[l[lp]] do
-	if(b[l[lp]][i][3]!=-1) break
-	g+=1
-end
+b={}
+speed_t=0
 ls_boxselect=1
 ls_levelstart=1
 ls_shift=-12
 t_step=0
-ls_unlocked[5]=#lvls[5]
---ls_unlocked[3]=#lvls[3]
+cspr=44
+code = -1
+elvl = {"your level!"}
+col=0 --color select
+
 
 function _init()
-	cls()
-	set_g()
-	set_re()
+	cartdata("bens_tactic_toe")
+	if dget(1)==1 then
+		for i=3, #lvls+1 do
+			l[i-1]=dget(i)
+		end
+	else
+		dset(2,1)
+	end
+	lp=dget(2)
+	lpshift=-1*(lp-1)*80
+	
+	--for i=2,#lvls do
+	--	l[i]=#lvls[i]
+	--end
 	palt(0, false)
 	palt(13, true)
 end
 
 function _draw()
- cls()
- if (mode=="title") then
- 	cls(1)
- 	color(7)
- 	txt="\^w\^ttactic-toe"
- 	print(txt,50-#txt*2,30)
- 	txt="by bens"
- 	print(txt,64-#txt*2,42)
- 	color(10)
- 	txt="press c to start"
- 	print(txt,64-#txt*2,100)
- 	txt="press x for editor"
- 	print(txt,64-#txt*2,110, 6)
- elseif (mode=="tutorial") then
+ cls() 
+ if mode=="title" then
+		draw_title()
+ elseif mode=="tutorial" then
  	draw_tutorial()
- elseif (mode=="editor") then
+ elseif mode=="editor" then
  	draw_editor()
-	elseif (mode=="select") then
-  --draw all level tabs
-	 for i=1,ml[lp]-1 do
-	 	print("level "..i,16,69+12*i+ls_shift,6)
-	 end
-	 for i=ls_unlocked[lp]+1,ml[lp]-1 do
-	  spr(16,90,68+12*i+ls_shift)
-	 end
-	 
-	 --draw selected level tab
-	 rectfill(12,66+12*ls_boxselect-12,113,66+12*ls_boxselect-2,10)
-	 circfill(12,71+12*ls_boxselect-12,5,10)
-		circfill(116,71+12*ls_boxselect-12,5,10)
-
-	 print("level "..l[lp],16,57+12*ls_boxselect,0)
-	 for i=1,ls_unlocked[lp]-1 do
-	  spr(21,90,68+12*i+ls_shift)
-	 end
-	 if lpdone[lp] then
-	 	spr(21,90,68+12*(ls_unlocked[lp])+ls_shift)
-	 end
-	 --draw preview level
-  rectfill(0,0,128,64,0)
-	 rect(37,5,90,58,10)
-	 rectfill(39,7,88,56,1)
-	 for i=1,g do	 
-	  	spr(1,32+b[l[lp]][i][1]*8,b[l[lp]][i][2]*8)
-	 end
-		for i=g+1,#b[l[lp]] do
-   spr(2+b[l[lp]][i][3],32+b[l[lp]][i][1]*8,b[l[lp]][i][2]*8)
-		end 
-	elseif (mode=="hint") then
-		hint_design()
+	elseif mode=="select" then
+  draw_select()
+	elseif mode=="hint" then
+		draw_hint()
 	elseif mode=="lpack" then
-		if(-1*(lp-1)*80>lpshift) lpshift += 8
-	 if(-1*(lp-1)*80<lpshift) lpshift -= 8	 
-		for i=1,#lplogos do
-			draw_lpack(lplogos[i],lpshift+32+(i-1)*80,32)
-	  if lpdone[i] then
-			 print(" : "..tostr(ml[i]-1).."/"..tostr(ml[i]-1),lpshift+56+(i-1)*80,100)
-			else
-			 print(" : "..tostr(ls_unlocked[i]-1).."/"..tostr(ml[i]-1),lpshift+56+(i-1)*80,100)		
-			end
-			if i==lp then
-			 rect(lpshift+33+(i-1)*80,32,lpshift+96+(i-1)*80,95,10)
-			 rect(lpshift+34+(i-1)*80,33,lpshift+95+(i-1)*80,94,10)
-			end
-	 end
-	 rectfill(lpshift+47,98,lpshift+82,108,0)
+		draw_lpack()
 	elseif mode=="level" then
-		cls()
-		map()
-		rectfill(16,16,112,112,1)
-		spr(36,0,16,2,2)
-		spr(32,0,32,2,2)
-		spr(34,0,48,2,2)
-		color(7)
-		txt="level "..l[lp]
-		print(txt, 64-#txt*2, 4)
-		
-		if(x==0) then
-			if (y==1) then
-				txt="exit to level select"
-			elseif(y==2) then
-				txt="want a hint?"
-			elseif(y==3) then
-				txt="restart level"
-			end	
-		else
-			txt="c to select, x to undo"
-		end
-		print(txt, 64-#txt*2, 118)
-		
-		-- goal sprite
-		for i=1, g do
-			spr(gf,b[l[lp]][i][1]*16,b[l[lp]][i][2]*16,2,2)
-		end
-		
-		-- block sprite
-		for i=g+1, #b[l[lp]] do
-			if(sx==b[l[lp]][i][1] and sy==b[l[lp]][i][2]) then
-				bbl=46 -- selected block
-			else
-				bbl=64+2*b[l[lp]][i][3]
-			end
-				spr(bbl,b[l[lp]][i][1]*16,b[l[lp]][i][2]*16,2,2)
-		end
-		
-		-- yellow dots
-		if (lock==1) then
-			for i = 1,#a do
-				if(a[i][1]!=-1 and a[i][1]!=-1) then
-					r=17
-					xflip=false
-					yflip=false
-					if(rock==1) then
-						r=18
-						if(a[i][1]==sx) r=20
-						if(a[i][2]==sy) r=19
-						if(a[i][2]<=sy) yflip=true
-					 if(a[i][1]<=sx) xflip=true
-					end
-					
-				spr(r,a[i][1]*16+4,a[i][2]*16+4,1,1,xflip,yflip)
-				end
-			end
-		end
-		spr(cf,x*16,y*16,2,2)
-		if(mode=="level"and(l[lp]==ml[lp]or currwon)) then
-			parts_draw()
-		 rect(33,53,95,87,5)
-		 rectfill(34,54,94,86,0)
-		 for i=1,3 do
-		 	rectfill(36,46+10*i,92,54+10*i,5)
-		 end
-	 	rectfill(36,46+10*mselect,92,54+10*mselect,10)
-			if l[lp]+1 == ml[lp] then
-				print("continue",38,58,6)
-			else
-				print("next level",38,58,6)
-			end
-			print("level select",38,68,6)
-			print("redo level",38,78,6)
-		end
+		draw_level()
+	elseif mode=="speed" then
+		draw_speed()
 	end
 end
 
 function _update()
-	if(lock==0) cf=38 sx=-1 sy=-1 
-
- if mode=="select" then
-  if (lp==1) mode="tutorial" x=2 y=4 
- 	if (btnp(4)) press_c()return
- 	if (btnp(5)) press_x()return
- 	if btnp(2)and l[lp]>1 then
- 	 l[lp]-=1
- 	 set_g()
- 	 ls_boxselect-=1
- 	 if ls_boxselect<3 and ls_shift<=-24 and l[lp]>1then
- 			ls_shift+=12
- 			ls_boxselect+=1
-   end
- 	elseif btnp(3)and l[lp]<ml[lp]-1 and l[lp]<ls_unlocked[lp] then
- 	 l[lp]+=1
- 	 set_g()
- 	 ls_boxselect+=1
- 	 if ls_boxselect>3 and ml[lp]-l[lp]>2then
- 			ls_shift-=12
- 			ls_boxselect-=1
- 		end
- 	 if ls_levelstart+3>l[lp] and ls_levelstart>1then
- 	  ls_levelstart-=1
- 	 end
- 	end
- 	return 
+	if mode=="title" then
+		update_title()
+	elseif mode=="select" then
+		update_select()
  elseif mode=="lpack" then
-  if(btnp(1)and lp<#lplogos) then
-   lp+=1
-   b=lvls[lp]
-  elseif(btnp(0)and lp>1)then
-   lp-=1
-   b=lvls[lp]
-  end
+  update_lpack()
 	elseif mode=="tutorial" then
 		update_tutorial()
 	elseif mode=="editor" then
 		update_editor()
+	elseif mode=="level" then
+		update_level()
+	elseif mode=="hint" then
+		update_hint()
+	elseif mode=="speed" then
+		update_speed()
 	end
+end
 
-	if (l[lp]==ml[lp]) return -- done
-	t+=1-- framecount
+--reg block behavior
+function arrows()
+	i=0
+	for dx=-1,1 do 
+		for dy=-1,1 do
+			if not(dx==0 and dy==0) then
+				i+=1
+				if inbounds(x+dx,y+dy) and (not contains(x+dx,y+dy) or btype=="knight") then
+					if (contains(x-dx,y-dy) or 
+					((dy == 0) and (contains(x-dx,y+1) and contains(x-dx,y-1))) or
+	    ((dx == 0) and (contains(x+1,y-dy) and contains(x-1,y-dy))) or
+	    ((dx != 0 and dy != 0) and (contains(x,y-dy) and contains(x-dx,y))) ) then
+	     a[i][1]=x+dx
+						a[i][2]=y+dy
+	    end
+	   end
+	  end
+		end
+	end	
+end
+
+function contains(px,py)
+	for i=g+2,#b do
+		if (b[i][1]==px and b[i][2]==py) return true
+	end
+	return false
+end
+
+function inbounds(px,py)
+ if px>6 or px<1 or py>6 or py<1 then
+ 	return false
+	end
+ 
+ return true
+end
+
+function rocket()
+	qx=0 qy=0
+	if (x<sx) qx=-1
+	if (x>sx) qx=1
+	if (y<sy) qy=-1 
+	if (y>sy) qy=1
 	
-	-- all win check stuff
-	gnum=0
-		for i=g+1, #b[l[lp]] do
-			for j = 1, g do
-				if (b[l[lp]][i][1]==b[l[lp]][j][1] and b[l[lp]][i][2]==b[l[lp]][j][2]) then
+	while(true) do
+		if inbounds(x+qx,y+qy) and not contains(x+qx,y+qy) then
+			x+=qx y+=qy				
+		else
+			break
+		end
+	end
+end
+
+
+function knight()
+	k={} kx=0 ky=0
+	for i=1, #a do
+		if a[i][1]!=-1 then
+			kx=a[i][1]-x
+			ky=a[i][2]-y
+			if kx!=0 and ky!=0 then
+				if(inbounds(x+kx,y+2*ky) and not contains(x+kx,y+2*ky)) add(k,{x+kx,y+2*ky})
+				if(inbounds(x+2*kx,y+ky) and not contains(x+2*kx,y+ky)) add(k,{x+2*kx,y+ky})		
+			elseif ky!=0 then
+				if(inbounds(x+1,y+2*ky) and not contains(x+1,y+2*ky)) add(k,{x+1,y+2*ky})
+				if(inbounds(x-1,y+2*ky) and not contains(x-1,y+2*ky)) add(k,{x-1,y+2*ky})		
+			elseif kx!=0 then
+				if(inbounds(x+2*kx,y+1) and not contains(x+2*kx,y+1)) add(k,{x+2*kx,y+1})
+				if(inbounds(x+2*kx,y-1) and not contains(x+2*kx,y-1)) add(k,{x+2*kx,y-1})		
+			end
+		end
+	end
+	a=k
+end
+
+function setup_ls()
+	ls_boxselect=min(3,cur)
+	if abs(#lvls[lp]-cur) <= 1 then
+		ls_boxselect=5-(#lvls[lp]-cur)
+	end
+ ls_levelstart=max(1,cur-2)
+	if #lvls[lp]-cur <= 1 then
+		ls_levelstart=#lvls[lp]-4
+	end
+ ls_shift=-ls_levelstart*12
+end
+
+function set_b(lev)
+	un={}
+	if (lev==nil) lev=lvls[lp][cur]
+	b={}
+	b[1]=lev[1]
+	for i=2, #lev do
+		b[i]={}
+		b[i][1]=lev[i][1]
+		b[i][2]=lev[i][2]
+		b[i][3]=lev[i][3]
+	end
+	
+	g=0
+	for i=2,#b do
+		if(b[i][3]!=-1) break
+		g+=1	
+	end
+end
+
+
+function wait()
+	--90
+	w+=1
+	if(w==90) then
+		w=0 
+		return true
+	end
+end
+
+
+-->8
+--modes
+
+--title
+function draw_title()
+ cls(1)
+ 
+ 
+ rectfill(0,103,128,128,14)
+ print(ver,97,5,6) 
+ print("\^w\^ttactic-toe",27,40,7)
+ 
+ spr(2,17,26) spr(2,25,26)
+ spr(2,33,26) spr(2,25,34)
+ spr(2,25,42) spr(3,15,24)
+ spr(3,23,24) spr(3,31,24)
+ spr(3,23,32) spr(3,23,40)
+ print("by bens",50,55,14)
+
+ if(t_mode==0) then
+ 	txt="start"
+ elseif(t_mode==1) then
+ 	txt="create"
+ elseif(t_mode==2) then
+ 	txt="speedrun"
+ end
+ 
+ print("press c to ",42-#txt*2,112,7)
+ print(txt,86-#txt*2,112,10)
+ spr(ud,110,111)
+ 
+ if restart>5 then
+ 	cls(1)
+ 	if restart<20 then
+ 	 col=10
+ 	elseif restart>40 then
+ 		col=8
+ 	else
+ 		col=9
+ 	end
+ 	print("hold x to delete", 33,70,6)
+ 	rectfill(34,60,94,65,6)
+ 	rectfill(34,60,34+restart,65,col)
+ elseif restart==-1 then
+ 	cls(1)
+ 	print("save file deleted", 30,64,8)
+ end
+end
+
+function update_title()
+	if (restart==-1) then
+		lp=1
+		lpshift=0
+		for i=3, #lvls+1 do
+			l[i-1]=0
+			dset(i,0)
+		end
+		if(wait())restart=0
+	elseif btn(❎) then
+		if (dget(1)==1) restart+=1
+		if (restart>=60) dset(1,0) restart=-1
+	else
+		restart=0
+	end
+	
+	if btnp(🅾️) then
+		ud=22
+		if t_mode==0 then
+			mode="lpack"
+		elseif t_mode==1 then
+			mode="editor"
+		elseif t_mode==2 then
+			mode="speed"
+			speed_t=time()
+			cur=1
+			lp=2
+			set_b()
+		end
+	end
+	if(btnp(⬆️)) t_mode-=1 ud=23
+	if(btnp(⬇️)) t_mode+=1 ud=24
+	if(t_mode==-1) t_mode=2
+	if(t_mode==3) t_mode=0
+end
+
+--tutorial
+function draw_tutorial()
+	rectfill(16,16,111,111,1)
+	color(7)
+	print("tutorial",48,6)
+	txt=""
+	if(t_step>3 and t_step<15) spr(44,80,48,2,2)
+	if(t_step>5) spr(66,16,16,2,2)
+	if(t_step>11) spr(66,48,48,2,2)
+	if(t_step==0) then
+		txt="use arrow keys to explore"
+	elseif(t_step==1) then
+		spr(66,16,16,2,2)
+		txt="good! go to that block"
+	elseif(t_step==2) then
+		x=1 y=1
+		spr(66,16,16,2,2)
+		txt="press c to select it"
+	elseif(t_step==3) then
+		x=1 y=1
+		spr(46,16,16,2,2)
+		txt="uh oh! this block cant move"
+	elseif(t_step==4) then
+		x=1 y=1
+		spr(46,16,16,2,2)
+		txt="we need a block on goal to win"
+	elseif(t_step==5) then
+		x=1 y=1
+		spr(46,16,16,2,2)
+		spr(66,32,32,2,2)
+		txt="new block! press c!"
+	elseif(t_step==6) then
+		spr(66,32,32,2,2)
+		txt="move to new block and press c!"
+	elseif(t_step==7) then
+		x=2 y=2
+		spr(46,32,32,2,2)
+		spr(17,52,52)
+		txt="awesome! this block can move!"
+ elseif(t_step==8) then
+		x=2 y=2
+		spr(46,32,32,2,2)
+		spr(17,52,52)
+		txt="wait why can this block move?"
+ elseif(t_step==9) then
+		x=2 y=2
+		spr(46,32,32,2,2)
+		spr(17,52,52)
+		txt="its boosted by the first block"
+ elseif(t_step==10) then
+		x=min(x,3) y=min(y,3)
+		spr(46,32,32,2,2)
+		spr(17,52,52)
+		txt="neat! move to the dot"
+ elseif(t_step==11) then
+		x=3 y=3
+		spr(46,32,32,2,2)
+		spr(17,52,52)
+		txt="now press c!"		
+	elseif(t_step==12) then
+		x=3 y=3
+		txt="you did it!!"
+	elseif(t_step==13) then
+		spr(66,64,48,2,2)
+		txt="now press c on block 3"
+	elseif(t_step==14) then
+		if(x!=5) x=4
+	 y=3
+		spr(46,64,48,2,2)
+		spr(17,84,52)
+		txt="then press c on the dot"		
+	elseif(t_step==15) then
+		x=5 y=3
+		spr(66,80,48,2,2)
+		parts_init()
+		txt="you win!! press c to play!"
+	elseif(t_step==16) then
+		x=5 y=3
+		spr(66,80,48,2,2)
+		parts_draw()
+		txt="you win!! press c to play!"
+	end
+	if (t_step!=16) spr(38,x*16,y*16,2,2)
+	print(txt,64-#txt*2,118,7)
+	
+	if restart>10 then
+ 	print("hold x to exit", 36,70,7)
+ 	rectfill(34,60,94,65,6)
+ 	rectfill(34,60,34+restart,65,7)
+ end
+end
+
+function update_tutorial()
+	if btn(❎) then
+		restart+=1
+		if (restart>=60) mode="lpack" restart=0 
+	else
+		restart=0
+	end
+	
+	if (btnp(⬅️) and x>1) x-=1
+	if (btnp(➡️) and x!=6) x+=1
+	if (btnp(⬆️) and y!=1) y-=1
+	if (btnp(⬇️) and y<6) y+=1
+	
+	if t_step==0 and (x==1 or x==3 or y==6 or y==2) then
+		t_step=1
+	elseif t_step==1 and x==1 and y==1 then
+		t_step=2
+	elseif t_step==2 and btnp(🅾️) then
+	 t_step=3
+	elseif t_step==3 and wait() then
+		t_step=4
+	elseif t_step==4 and wait() then
+		t_step=5
+	elseif t_step==5 and btnp(🅾️) then
+		t_step=6
+	elseif t_step==6 and btnp(🅾️) and x==2 and y==2 then
+		t_step=7
+	elseif t_step==7 and wait() then
+		t_step=8
+	elseif t_step==8 and wait() then
+		t_step=9
+	elseif t_step==9 and wait() then
+	 t_step=10
+	elseif t_step==10 and x==3 and y==3 then
+		t_step=11
+	elseif t_step==11 and btnp(🅾️) then
+		t_step=12	
+	elseif t_step==12 and wait() then
+  t_step=13
+	elseif t_step==13 and btnp(🅾️) and x==4 and y==3 then
+		t_step=14
+	elseif t_step==14 then
+		if(btnp(🅾️) and x==5 and y==3) t_step=15
+	elseif t_step==15 then
+	 t_step=16
+	elseif t_step==16 then
+		parts_update()
+		if(btnp(🅾️)) mode="lpack"
+	end
+end
+
+--editor
+function draw_editor()
+ rectfill(16,16,111,111,1)
+ for i=2,#elvl do
+ 	spr(elvl[i][4],elvl[i][1]*16,elvl[i][2]*16,2,2) 
+ end
+ 
+ if cspr==36 then
+ 	print("del",x*16+2,y*16+6,8)
+ else
+  spr(cspr,x*16,y*16,2,2)
+ end
+ spr(38,x*16,y*16,2,2)
+	
+ if x==0 then
+ 	txt="press c to "
+ 	if (y==1) txt=txt.."exit"
+ 	if (y==2) txt=txt.."run"
+ 	if (y==3) txt=txt.."copy"
+ 	if (y==4) txt=txt.."erase"
+ else
+ 	txt="c to change, x to place"
+ end
+ 
+ print(txt, 64-#txt*2, 118,6)
+ print("bck",2,22,7)
+ print("run",2,38,7)
+ print("sav",2,54,7)
+ print("clr",2,70,7)
+end
+
+function update_editor()
+	if (btnp(🅾️)) editor_c()
+	if (btnp(❎)) editor_x()
+	if (btnp(⬅️) and x>0) x-=1
+	if (btnp(➡️) and x<7) x+=1
+	if (btnp(⬆️) and y>0) y-=1
+	if (btnp(⬇️) and y<7) y+=1
+end
+
+function editor_c()
+ if x==0 then
+ 	if y==1 then
+ 		mode="title"
+ 		lp=1
+ 		lpshift=0
+ 		ud=22	 
+		elseif y==2 or y==3 then
+			for i=1,#elvl do
+				if(elvl[i][3]==-1) break
+				if(i==#elvl) 	extcmd("needs goal") return
+			end
+			if(y==2) then
+				mode="level"
+				set_b(elvl)
+			 lp=-1
+			elseif(y==3) then
+	 		estr="{name here,"
+				for i=2,#elvl do
+		 		estr=estr .. "{" .. tostr(elvl[i][1]) .. "," .. tostr(elvl[i][2]) .. "," .. tostr(elvl[i][3]) .. "},"
+		  end
+				estr= estr.."},"
+				printh(estr, "@clip")
+				extcmd("copied!")
+			end
+ 	elseif(y==4) then
+ 		elvl={"your level!"}
+ 	end
+ else
+ 	code+=1
+ 	if cspr==36 then
+			cspr=44
+			code=-1
+		elseif cspr==44 then
+			cspr=64
+		elseif cspr==64 then
+			cspr=66
+		elseif cspr==66 then
+			cspr=68
+		elseif cspr==68 then
+			cspr=70
+		elseif cspr==70 then
+			cspr=36
+		end
+ end
+end
+
+function editor_x()
+	for i=1,#elvl do
+		if (x==elvl[i][1] and y==elvl[i][2]) then
+			del(elvl,elvl[i])
+			break
+		end
+	end
+	if(cspr==36) return
+	--need goal first
+	if(code==-1 and inbounds(x,y)) then
+		add(elvl,{x,y,code,cspr},2)
+	elseif (code!=0 and inbounds(x,y)) then
+		add(elvl,{x,y,code,cspr})
+	elseif (code==0) then
+		add(elvl,{x,y,code,cspr})
+	end
+end
+
+--select
+function draw_select()
+	--draw all level tabs
+	for i=1,#lvls[lp] do
+	 print(i..". "..lvls[lp][i][1],16,69+12*i+ls_shift,6)
+	end
+	for i=l[lp]+2,#lvls[lp] do
+	 spr(16,100,68+12*i+ls_shift)
+	end
+	--draw selected level tab
+ rectfill(12,66+12*ls_boxselect-12,113,66+12*ls_boxselect-2,10)
+	circfill(12,71+12*ls_boxselect-12,5,10)
+	circfill(116,71+12*ls_boxselect-12,5,10)
+
+	print(cur..". "..lvls[lp][cur][1],16,57+12*ls_boxselect,0)
+	for i=1,l[lp] do
+	 spr(21,100,67+12*i+ls_shift)
+ end
+ --draw preview level
+ rectfill(0,0,128,64,0)
+ rect(37,5,90,58,10)
+	rectfill(39,7,88,56,1)
+	lv=lvls[lp][cur]
+ for i=2,#lv do	 
+	 spr(lv[i][3]+2,(lv[i][1]+4)*8,lv[i][2]*8)
+	end 
+	circfill(5,5,3,6)
+	rectfill(6,2,16,8,6)
+	circfill(18,5,3,6)
+	print("<<",4,3,0)
+	print("x",15,3,0)
+end
+
+function update_select()
+	if btnp(🅾️) then
+		mode="level"
+		set_b()
+		x=b[2][1]
+		y=b[2][2]
+	end
+	if (btnp(❎)) mode="lpack" lpshift=-80*(lp-1)
+ if (lp==1) mode="tutorial" x=2 y=4 t_step=0 
+ if btnp(⬆️) and cur>1 then
+ 	cur-=1
+ 	ls_boxselect-=1
+ 	if ls_boxselect<3 and ls_shift<=-24 and cur>1then
+ 		ls_shift+=12
+ 		ls_boxselect+=1
+  end
+ elseif btnp(⬇️) and cur<=min(l[lp],#lvls[lp]-1) then
+ 	cur+=1
+ 	ls_boxselect+=1
+ 	if ls_boxselect>3 and #lvls[lp]-cur>1then
+ 		ls_shift-=12
+ 		ls_boxselect-=1
+ 	end
+ 	if ls_levelstart+3>cur and ls_levelstart>1then
+ 	 ls_levelstart-=1
+ 	end
+ end
+end
+
+--hint
+function draw_hint()
+	cls(1)
+	rectfill(110,27,119,36,6)
+	rectfill(110,42,119,51,6)
+	spr(21,111,28)
+	color(7)
+	print("hint options",40,10)	
+	line(35, 18, 93, 18)
+	print("three moves left", 10, 30)
+	print("show winning block", 10, 45)
+	print("back",56,110)
+end
+	
+function update_hint()
+	if(btnp(🅾️)) mode="level"
+end
+
+--llpack
+function draw_lpack()
+	cls(1)
+	circfill(5,5,3,6)
+	rectfill(6,2,16,8,6)
+	circfill(18,5,3,6)
+	print("<<",4,3,1)
+	print("x",15,3,1)
+	if lp==1 then
+		print("press c to select",30,112,6)
+	end
+	if(-1*(lp-1)*80>lpshift) lpshift += 4
+	if(-1*(lp-1)*80<lpshift) lpshift -= 4	 
+	--fix so only shows relevant squares
+	for i=max(1,lp-1),min(#lplogos,lp+1) do
+		lpack_square(lplogos[i],lpshift+32+(i-1)*80,32)
+		print(tostr(l[i]).."/"..tostr(#lvls[i]),lpshift+56+(i-1)*80,100,6)		
+		if i==lp then
+			rect(lpshift+33+(i-1)*80,32,lpshift+96+(i-1)*80,95,10)
+			rect(lpshift+34+(i-1)*80,33,lpshift+95+(i-1)*80,94,10)
+		end
+		if i!=1 and l[i]==#lvls[i] then
+			spr(21,5+(i)*80+lpshift,35)
+		end
+	end
+	rectfill(lpshift+47,98,lpshift+82,108,1)	
+end
+
+function update_lpack()
+	if btnp(🅾️) then
+		mode="select"
+		cur=min(l[lp]+1,#lvls[lp])
+		setup_ls()
+	end
+	if(btnp(❎)) mode="title"
+	--lpshift==-1*(lp-1)*80
+	if(btnp(➡️)and lp<#lplogos) then
+  lp+=1
+ elseif(btnp(⬅️)and lp>1) then
+  lp-=1
+ end
+end
+
+--level
+function draw_level()
+	map()
+	rectfill(16,16,111,111,1)
+	print("bck",2,22,12)
+	print("hlp",2,38,10)
+	print("clr",2,54,8)
+	
+	color(7)
+	txt=cur..". "..b[1]
+	if(lp==-1) txt=b[1]
+	print(txt, 64-#txt*2, 4)
+	
+	if(x==0) then
+		txt=""
+		if (lp==2) txt="press c to "
+		if (y==1) then
+			txt=txt.."exit to level select"
+		elseif(y==2) then
+			txt=txt.."get a hint"
+		elseif(y==3) then
+			txt=txt.."restart level"
+		end	
+	elseif(lp==2) then
+		txt="c to select, x to undo"
+	else
+		txt=""
+	end
+	print(txt,64-#txt*2,118,6)
+		
+	-- level sprites
+	for i=2, #b do
+		if lock==1 and sx==b[i][1] and sy==b[i][2] then
+			bbl=46 -- selected block
+		elseif b[i][3]==-1 then
+			bbl=44
+		else
+			bbl=64+2*b[i][3]
+		end
+			spr(bbl,b[i][1]*16,b[i][2]*16,2,2)
+	end
+		
+	-- yellow dots
+	if (lock==1) then
+		for i = 1,#a do
+			if a[i][1]!=-1 then
+				r=17
+				xflip=false
+				yflip=false
+				if(btype=="rocket") then
+					r=18
+					if(a[i][1]==sx) r=20
+					if(a[i][2]==sy) r=19
+					if(a[i][2]<=sy) yflip=true
+				 if(a[i][1]<=sx) xflip=true
+				end
+			spr(r,a[i][1]*16+4,a[i][2]*16+4,1,1,xflip,yflip)
+			end
+		end
+	end
+	
+	spr(cf,x*16,y*16,2,2)
+	
+	if currwon then
+	 dopamine+=1
+	 if(lp==-1) dopamine=0
+	 if(dopamine>=25) rect(33,53,95,87,5)
+	 if(dopamine>=27) rectfill(34,54,94,86,0)
+	 if dopamine>=30 then
+			for i=1,3 do
+	 		rectfill(36,46+10*i,92,54+10*i,5)
+	 	end
+			rectfill(36,46+10*mselect,92,54+10*mselect,10)
+			txt="next level"
+			
+			if(cur>=#lvls[lp]) txt="continue"
+			cola=6 colb=6 colc=6
+			if(mselect==1) cola=0
+			if(mselect==2) colb=0
+			if(mselect==3) colc=0
+			
+			print(txt,38,58,cola)
+			print("level select",38,68,colb)
+			print("retry",38,78,colc)
+		end
+		parts_draw()
+	end
+end
+
+function update_level()
+	if (currwon) level_won() return
+	if (lock==0) level_unlocked() return
+	if (lock==1) level_locked() return
+end
+
+function level_unlocked()
+ cf=38 sx=-1 sy=-1
+	
+	if (btnp(⬅️) and (x>1 or (x==1 and y<4))) x-=1
+	if (btnp(➡️) and x!=6) x+=1
+	if (btnp(⬆️) and y!=1) y-=1
+	if (btnp(⬇️) and ((y<6 and x>0) or y<3)) y+=1
+	
+	
+	if btnp(🅾️) then
+		if (x==0) then
+			if y==1 then
+				if (lp==-1) mode="editor" return
+					mode="select"
+					setup_ls()
+			elseif y==2 then
+					mode="hint"
+			elseif y==3 then
+				if (lp==-1) set_b(elvl) return
+				set_b()
+			end
+			return
+		end
+		
+		for i=g+2,#b do
+			if (x==b[i][1] and y==b[i][2] and b[i][3]>0) then
+				lock=1
+				sx=x sy=y
+				a={}
+				for i=1,8 do
+					add(a,{-1,-1})
+				end
+				
+				if(b[i][3]==2) btype="rocket"
+				if(b[i][3]==3) btype="knight"
+				arrows()
+				if(b[i][3]==3) knight()
+
+				break
+			end
+		end
+	end
+	
+	if btnp(❎) and #un>0 then
+		b[un[#un][3]][1]=un[#un][1]
+		b[un[#un][3]][2]=un[#un][2]
+		deli(un,#un)
+		lock=0
+	end
+end
+
+
+function level_locked()
+		rx=x ry=y
+		if (btnp(⬆️)) ry=y-1
+		if (btnp(⬅️)) rx=x-1
+		if (btnp(➡️)) rx=x+1
+		if (btnp(⬇️)) ry=y+1
+		
+		val=2
+		if(btype=="knight") val=3
+		if inbounds(rx,ry) and abs(sx-rx)<val and abs(sy-ry)<3	then
+	 	x=rx y=ry
+		end
+		
+	cft+=1
+	if(cft==20 and cf==38) cft=0 cf=40
+	if(cft==20 and cf==40) cft=0 cf=38
+	
+	if btnp(🅾️) then
+		for j=1,#a do		 
+			if (x==a[j][1] and y==a[j][2]) then
+	 		for i=g+2,#b do
+					if sx==b[i][1] and sy==b[i][2] then 
+						add(un,{b[i][1],b[i][2],i})
+						if (b[i][3]==2) rocket() 
+						b[i][1]=x
+						b[i][2]=y
+					end
+				end
+			 break
+		 end
+	 end
+	 lock=0 btype=""
+	 
+	 gnum=0
+		for i=g+2, #b do
+			for j = 2, g+1 do
+				if (b[i][1]==b[j][1] and b[i][2]==b[j][2]) then
 					gnum+=1
 				end
 			end
 		end
 		
-	if (gnum==g)	then
-		if not currwon then
+		if (gnum==g)	then
+			currwon=true
+			gnum=0
 			parts_init()
 			mselect=1
-			currwon=true
-			if l[lp]>ls_unlocked[lp] then
-				ls_unlocked[lp]=l[lp]
-			end
-			return
-		else
-			parts_update()
-			if(btnp(⬆️)and mselect>1) mselect-=1
-			if(btnp(⬇️)and mselect<3)mselect+=1
-			if(btnp(🅾️)) press_c()
-			if(btnp(❎)) press_x()
+			if lp!=-1 and l[lp]<cur then
+				l[lp]+=1
+				dset(lp+1,l[lp])
+				dset(2,lp)
+				dset(1,1)
+			end	
 			return
 		end
-  set_g()
-		if l[lp]>ls_unlocked[lp] then
-			ls_unlocked[lp]=l[lp]
-		end
-		x=b[l[lp]][1][1]
-		y=b[l[lp]][1][2]
-		b[l[lp]-1]=re
-		un={}
-  set_re()
 	end
+	if (btnp(❎)) lock=0 btype=""
+end
+
+function level_won()
+	cf=12
+	parts_update()
+	if(btnp(⬆️)and mselect>1) mselect-=1
+	if(btnp(⬇️)and mselect<3) mselect+=1
 	
-	--movement not locked
-	if(mode=="select") then
-		if (btnp(⬆️) and l[lp]-1!=0) l[lp]-=1
-		if (btnp(⬇️) and l[lp]+1!=ml[lp]) l[lp]+=1
-  set_g()
-	elseif (lock == 0 and mode!="editor") then
-		if (btnp(⬅️) and (x>1 or (x==1 and y<4))) x-=1
-		if (btnp(➡️) and x!=6) x+=1
-		if (btnp(⬆️) and y!=1) y-=1
-		if (btnp(⬇️) and ((y<6 and x>0) or y<3)) y+=1
-		
-		if (btnp(⬅️) or btnp(➡️) or btnp(⬆️) or btnp(⬇️)) then
-			if (gf==42) then gf=44
-			elseif (gf==44) then gf=42
+	if (btnp(❎) and mode=="level") mselect=2
+	
+	if btnp(🅾️) or btnp(❎) then
+		currwon=false
+		dopamine=0
+	 
+	 if (lp==-1) mode="editor" return
+	 
+		if mselect==1 then
+			if (cur==#lvls[lp]) then
+				mode="lpack"
+			else
+				if (cur<#lvls[lp]) cur+=1
+				set_b()
 			end
-		end
-	
-	--movement locked	
-	elseif (mode!="editor") then
-		gf=44
-  		rx=x ry=y
-		if (btnp(⬆️)) ry=y-1
-		if (btnp(⬅️)) rx=x-1
-		if (btnp(➡️)) rx=x+1
-		if (btnp(⬇️) ) ry=y+1
-			
-		if((sx!=1 and rx==sx-1)or(rx==sx)or(sx!=6 and rx==sx+1))and((sy!=1 and ry==sy-1)or(ry==sy)or(sy!=6 and ry==sy+1)) then
-			x=rx y=ry
-		end
-
-		-- cursor flashing
-		if (t%20==0) then
-			t=0
-			if (cf==38) then 
-				cf = 40
-			elseif (cf==40) then 
-				cf = 38
-			end
-		end
-	end
-	
-	--undo
-	if(btnp(❎)) press_x()
-	
-	--select
- if(btnp(🅾️)) press_c()
-end
-
---reg block behavior
-function arrows()
-
-	ai=0
-	for dx=-1,1 do 
-		for dy=-1,1 do
-			if not(dx==0 and dy==0) then
-				ai+=1
-				if (not contains(x+dx,y+dy)) and(inbounds(x+dx,y+dy)) then
-					if (contains(x-dx,y-dy) or 
-					((dy == 0) and (contains(x-dx,y+1) and contains(x-dx,y-1))) or
-	    ((dx == 0) and (contains(x+1,y-dy) and contains(x-1,y-dy))) or
-	    ((dx != 0 and dy != 0) and (contains(x,y-dy) and contains(x-dx,y))) ) then
-	     a[ai][1]=x+dx
-						a[ai][2]=y+dy
-	    end
-	   end
-			end
-		end
-	end	
-end
-
-function hint_design()
-	cls(1)
-	rectfill(80,27,100,37, 0)
-	color(7)
-	txt = "hint options"
-	print(txt, 64-#txt*2, 10)	
-	line(35, 18, 93, 18)
-	
-	print("three moves left: off", 10, 30)
-	
-	print("highlight winning block: off", 10, 45)
-	
-	txt = "back"
-	print(txt, 64-#txt*2, 110)
-	
-	
-end
-	
-function buttons()
-	--restart button
-	if(x==0 and y==3)then
-		for i=1,#b[l[lp]] do
-			b[l[lp]][i][1]=re[i][1]
-			b[l[lp]][i][2]=re[i][2]
-		end
-		lock=0
-		return 1
-	--hint button
-	elseif(x==0 and y==2)then
-		mode="hint"
-		lock=0
-		return 1
-	--level select button	
-	elseif(x==0 and y==1)then
-		mode="select"
-		setup_ls()
-		for i=1,#b[l[lp]] do
-			b[l[lp]][i][1]=re[i][1]
-			b[l[lp]][i][2]=re[i][2]
-		end
-		lock=0
-	end
-	return 0
-end
-
-function press_c()
-if (mode=="title") then
-	mode="lpack"
-elseif(mode=="lpack") then
-	mode="select"
-	setup_ls()
-elseif mode=="editor" then
- editor_c()
-elseif(mode=="hint" or mode=="select")then
-	mode="level"
-	x=b[l[lp]][1][1]
-	y=b[l[lp]][1][2]
- set_re()
-	set_g()
-elseif mode=="level" and currwon then
-	currwon=false
- un={}
- b[l[lp]]=re
-	if l[lp]>=ls_unlocked[lp] then
-		ls_unlocked[lp]=l[lp]+1
-	end
-	if mselect==1 and l[lp]+1 ==ml[lp] then
-		mode="lpack"
-	elseif mselect==1 then
-		l[lp]+=1
-	elseif mselect==2 then
-		mode="select"
-		setup_ls()
-	end
- set_re()
-	set_g()
-elseif (lock==1) then
- for j=1,#a do		 
- 	if (x==a[j][1] and y==a[j][2]) then
-		 for i=g+1,#b[l[lp]] do
-				if sx==b[l[lp]][i][1] and sy==b[l[lp]][i][2] then 
-					add(un,{b[l[lp]][i][1],b[l[lp]][i][2],i})
-					if (b[l[lp]][i][3]==2) then
-						qqx=x qqy=y
-						rocket() 
-						x=qqx y=qqy
-					end 
-					b[l[lp]][i][1]=x
-					b[l[lp]][i][2]=y
-				end
-			end
-			break
-		end
-	end
-	lock=0 rock=0
-		else
-			if (buttons()!=1) then
-			for i=g+1,#b[l[lp]] do
-				if (x==b[l[lp]][i][1] and y==b[l[lp]][i][2] and b[l[lp]][i][3]>0) then
-					if (b[l[lp]][i][3]==2) rock=1
-					lock=1
-					sx=x sy=y
-					a={{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1},{-1,-1}}
-					if (b[l[lp]][i][3]>0) then
-						arrows()
-					end
-					break
-				end
-			end
+		elseif mselect==2 then
+			if (cur<#lvls[lp]) cur+=1
+			mode="select"
+			setup_ls()
+		elseif mselect==3 then
+			set_b()
 		end
 	end
 end
 
-function press_x()
-		if (mode=="title") then
-	  mode="editor"
-	 elseif mode=="lpack" then
-   mode="title"
-	 elseif mode=="editor" then
-   editor_x()
-		elseif(mode=="select")then
-			mode="lpack"
-   lpshift=-80*(lp-1)
-		elseif(mode=="level" and lock==1) then
-			lock=0
-		elseif(mode=="level"and #un>0) then
-			b[l[lp]][un[#un][3]][1]=un[#un][1]
-			b[l[lp]][un[#un][3]][2]=un[#un][2]
-			deli(un,#un)
-			lock=0
-		end
- end
+function draw_speed()
+	draw_level()
+	rectfill(0,113,128,128,0)
+	--use sub function?
+	txt=time()-speed_t
+	print(txt,64-8,118,6)
+end
 
-
-function contains(px,py)
-	if (px>7or px<0 or py>7or py<0) then
-		return false
+function update_speed()
+	update_level()
+	mode="speed"
+	if (x==0 and btnp(🅾️)) then
+		if (y==1) mode="title" lp=1 lpshift=0 return
+		lp=2
+		cur=1
+		set_b()
 	end
 	
-	for i=g+1,#b[l[lp]] do
-		if (b[l[lp]][i][1]==px) and (b[l[lp]][i][2]==py) then
-		 return true
+	if (cur==#lvls[lp]) then
+		lp+=1
+		cur=1
+		set_b()
+	end
+end
+-->8
+
+parts={}
+
+function parts_init()
+ parts={}
+	for i=1,100 do
+		add(parts,{
+		x=rnd(128),
+		y=rnd(60)-60,
+		c=rnd({8,10,12}),
+		d=rnd(2)-1,
+		t=rnd(1),
+		})
+	end
+end
+
+function parts_draw()
+	for p in all(parts) do
+		pset(p.x,p.y,p.c)
+	end
+end
+
+function parts_update()
+	for p in all(parts) do
+		p.x+=((p.t>=0.25 or p.t<0.75) and cos(p.t) or -cos(p.t))
+		p.t+=0.03
+		p.t%=1
+		p.y+=(sin(p.t)+1)/2
+		if p.y >128 then
+			del(parts,p)
 		end
 	end
-	
-	return false
 end
 
-function inbounds(px,py)
- if (px>6or px<1or py>6or py<1) then
- 	return false
- else 
- 	return true
- end
-end
-
-function rocket()
-	while(true) do
-		qx=0 qy=0
-		if (x<sx) qx=-1
-		if (x>sx) qx=1
-		if (y<sy) qy=-1 
-		if (y>sy) qy=1
-		if (inbounds(qqx+qx,qqy+qy) and contains(qqx+qx,qqy+qy)==false) then
-			qqx+=qx qqy+=qy				
-		else
-			break
+function lpack_square(_pack,lpx,lpy)
+ for yy=0,63 do
+		for xx=1,64 do
+			pset(lpx+xx,lpy+yy,tonum(_pack[xx+64*yy],1))
 		end
 	end
 end
 
-function setup_ls()
-	ls_boxselect=min(3,l[lp])
-	if abs(ml[lp]-l[lp]) <= 2 then
-		ls_boxselect=6-(ml[lp]-l[lp])
-	end
- ls_levelstart=max(1,l[lp]-2)
-	if ml[lp]-l[lp] <= 2 then
-		ls_levelstart=ml[lp]-5
-	end
- ls_shift=-ls_levelstart*12
-end
 
-function set_g()
- g=0
-	for i=1,#b[l[lp]] do
-		if(b[l[lp]][i][3]!=-1) break
-		g+=1	
-	end
-end
-
-function set_re()
- re={}
-	for i=1,#b[l[lp]] do
-		re[i]={}
-		re[i][1]=b[l[lp]][i][1]
-		re[i][2]=b[l[lp]][i][2]
-		re[i][3]=b[l[lp]][i][3]
-	end
-end
 __gfx__
-00000000ddddddddeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-00000000dd6666dde111111ee666666eeccccccedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-00700700d6dddd6de111111ee666666eeccccccedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-00077000d6d66d6de111111ee666666eeccccccedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-00077000d6d66d6de111111ee666666eeccccccedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-00700700d6dddd6de111111ee666666eeccccccedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-00000000dd6666dde111111ee666666eeccccccedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-00000000ddddddddeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dd6666ddddddddddddddddddddddddddddddddddddd00ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dd6dd6dddddddddddaaddddddddddadddddaaddddd0aa0dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dd6dd6ddddaaaadddaaadddddddddaaddddaaddd000aa000dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-d666666dddaaaaddddaaadaddaaaaaaadddaaddd0aaaaaa0dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-d666666dddaaaadddddaaaaddaaaaaaadddaadddd0aaaa0ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-d666666dddaaaaddddddaaaddddddaaddaaaaaad0aaaaaa0dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-d666666ddddddddddddaaaaddddddaddddaaaadd0aa00aa0dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-dddddddddddddddddddddddddddddddddddaaddd000dd000dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ddddaaaaaaaaddddddddccccccddccddddd8dddddddd8ddd77777dddddd77777dddddddddddddddd6666666666666666ddddddddddddddddeeeeeeeeeeeeeeee
-ddddaaaaaaaaddddddddccccccddccdddd88dddddddd88dd77777dddddd77777dddddddddddddddd6666666666666666ddddddddddddddddeeeeeeeeeeeeeeee
-ddaaddddddddaaddddccddddddccccddd888dddddddd888d77dddddddddddd77ddaaaaddddaaaadd66dddddddddddd66dddd66666666ddddeeaaaaaaaaaaaaee
-ddaaddddddddaaddddccddddddccccdd88888dddddd8888877dddddddddddd77ddaaaaddddaaaadd66dddddddddddd66dddd66666666ddddeeaaaaaaaaaaaaee
-aaddddaaaaddddaaccddddddccccccddddd888dddd888ddd77dddddddddddd77ddaaddddddddaadd66dd66666666dd66dd66dddddddd66ddeeaaaaaaaaaaaaee
-aaddddaaaaddddaaccddddddccccccdddddd888dd888ddddddddddddddddddddddaaddddddddaadd66dd66666666dd66dd66dddddddd66ddeeaaaaaaaaaaaaee
-aaddddddddddddaaccddddddddddddddddddd888888ddddddddddddddddddddddddddddddddddddd66dd66dddd66dd66dd66dd6666dd66ddeeaaaaaaaaaaaaee
-aaddddddddddddaaccdddddddddddddddddddd8888dddddddddddddddddddddddddddddddddddddd66dd66dddd66dd66dd66dd6666dd66ddeeaaaaaaaaaaaaee
-aaddddaaaaddddaaccdddddddddddddddddddd8888dddddddddddddddddddddddddddddddddddddd66dd66dddd66dd66dd66dd6666dd66ddeeaaaaaaaaaaaaee
-aaddddaaaaddddaaccddddddddddddddddddd888888ddddddddddddddddddddddddddddddddddddd66dd66dddd66dd66dd66dd6666dd66ddeeaaaaaaaaaaaaee
-aaddddaaaaddddaaccddddddddddddccdddd888dd888ddddddddddddddddddddddaaddddddddaadd66dd66666666dd66dd66dddddddd66ddeeaaaaaaaaaaaaee
-aaddddaaaaddddaaccddddddddddddccddd888dddd888ddd77dddddddddddd77ddaaddddddddaadd66dd66666666dd66dd66dddddddd66ddeeaaaaaaaaaaaaee
-ddaaddddddddaaddddccddddddddccdd88888dddddd8888877dddddddddddd77ddaaaaddddaaaadd66dddddddddddd66dddd66666666ddddeeaaaaaaaaaaaaee
-ddaaddddddddaaddddccddddddddccddd888dddddddd888d77dddddddddddd77ddaaaaddddaaaadd66dddddddddddd66dddd66666666ddddeeaaaaaaaaaaaaee
-ddddaaaaaaaaddddddddccccccccdddddd88dddddddd88dd77777dddddd77777dddddddddddddddd6666666666666666ddddddddddddddddeeeeeeeeeeeeeeee
-ddddaaaaaaaaddddddddccccccccddddddd8dddddddd8ddd77777dddddd77777dddddddddddddddd6666666666666666ddddddddddddddddeeeeeeeeeeeeeeee
-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeeccccc00ccccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeecccc0880cccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeecccc0000cccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeecccc0560cccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeecccc5750cccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeecccc0560cccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeeccc006600ccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeecc05066050cceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeecccc0660cccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeeccccc00ccccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeecccc8998cccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-ee111111111111eeee666666666666eeeeccccc88ccccceedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
-eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+00000000ddddddddeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+00000000dd6666dde111111ee666666eeccccccee888888edddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+00700700d6dddd6de111111ee666666eeccccccee888888edddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+00077000d6d66d6de111111ee666666eeccccccee888888edddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+00077000d6d66d6de111111ee666666eeccccccee888888edddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+00700700d6dddd6de111111ee666666eeccccccee888888edddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+00000000dd6666dde111111ee666666eeccccccee888888edddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+00000000ddddddddeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+dd6666ddddddddddddddddddddddddddddddddddddd00ddddddd7dddddddaddddddd7ddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+dd6dd6dddddddddddaaddddddddddadddddaaddddd0aa0ddddd7d7dddddadaddddd7d7ddd444444dd666666ddaaaaaaddddddddddddddddddddddddddddddddd
+dd6dd6ddddaaaadddaaadddddddddaaddddaaddd000aa000dd7ddd7dddadddaddd7ddd7dd499994dd677776ddaeeeeaddddddddddddddddddddddddddddddddd
+d666666dddaaaaddddaaadaddaaaaaaadddaaddd0aaaaaa0ddddddddddddddddddddddddd494494dd676676ddaeaaeaddddddddddddddddddddddddddddddddd
+d666666dddaaaadddddaaaaddaaaaaaadddaadddd0aaaa0dddddddddddddddddddddddddd494494dd676676ddaeaaeaddddddddddddddddddddddddddddddddd
+d666666dddaaaaddddddaaaddddddaaddaaaaaad0aaaaaa0dd7ddd7ddd7ddd7dddadddadd499994dd677776ddaeeeeaddddddddddddddddddddddddddddddddd
+d666666ddddddddddddaaaaddddddaddddaaaadd0aa00aa0ddd7d7ddddd7d7dddddadaddd444444dd666666ddaaaaaaddddddddddddddddddddddddddddddddd
+dddddddddddddddddddddddddddddddddddaaddd000dd000dddd7ddddddd7dddddddaddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ddddaaaaaaaaddddddddccccccddccdd88dddddddddddd8877777dddddd77777dddddddddddddddd6666666666666666ddddddddddddddddeeeeeeeeeeeeeeee
+ddddaaaaaaaaddddddddccccccddccdd88dddddddddddd8877777dddddd77777dddddddddddddddd6666666666666666ddddddddddddddddeeeeeeeeeeeeeeee
+ddaaddddddddaaddddccddddddccccdddd88dddddddd88dd77dddddddddddd77ddaaaaddddaaaadd66dddddddddddd66dddd66666666ddddeeaaaaaaaaaaaaee
+ddaaddddddddaaddddccddddddccccdddd88dddddddd88dd77dddddddddddd77ddaaaaddddaaaadd66dddddddddddd66dddd66666666ddddeeaaaaaaaaaaaaee
+aaddddaaaaddddaaccddddddccccccdddddd88dddd88dddd77dddddddddddd77ddaaddddddddaadd66dd66666666dd66dd66dddddddd66ddeeaaaaaaaaaaaaee
+aaddddaaaaddddaaccddddddccccccdddddd88dddd88ddddddddddddddddddddddaaddddddddaadd66dd66666666dd66dd66dddddddd66ddeeaaaaaaaaaaaaee
+aaddddddddddddaaccdddddddddddddddddddd88dddddddddddddddddddddddddddddddddddddddd66dd66dddd66dd66dd66dd6666dd66ddeeaaaaaaaaaaaaee
+aaddddddddddddaaccdddddddddddddddddddd88dddddddddddddddddddddddddddddddddddddddd66dd66dddd66dd66dd66dd6666dd66ddeeaaaaaaaaaaaaee
+aaddddaaaaddddaaccdddddddddddddddddddddd88dddddddddddddddddddddddddddddddddddddd66dd66dddd66dd66dd66dd6666dd66ddeeaaaaaaaaaaaaee
+aaddddaaaaddddaaccdddddddddddddddddddddd88dddddddddddddddddddddddddddddddddddddd66dd66dddd66dd66dd66dd6666dd66ddeeaaaaaaaaaaaaee
+aaddddaaaaddddaaccddddddddddddccdddd88dddd88ddddddddddddddddddddddaaddddddddaadd66dd66666666dd66dd66dddddddd66ddeeaaaaaaaaaaaaee
+aaddddaaaaddddaaccddddddddddddccdddd88dddd88dddd77dddddddddddd77ddaaddddddddaadd66dd66666666dd66dd66dddddddd66ddeeaaaaaaaaaaaaee
+ddaaddddddddaaddddccddddddddccdddd88dddddddd88dd77dddddddddddd77ddaaaaddddaaaadd66dddddddddddd66dddd66666666ddddeeaaaaaaaaaaaaee
+ddaaddddddddaaddddccddddddddccdddd88dddddddd88dd77dddddddddddd77ddaaaaddddaaaadd66dddddddddddd66dddd66666666ddddeeaaaaaaaaaaaaee
+ddddaaaaaaaaddddddddccccccccdddd88dddddddddddd8877777dddddd77777dddddddddddddddd6666666666666666ddddddddddddddddeeeeeeeeeeeeeeee
+ddddaaaaaaaaddddddddccccccccdddd88dddddddddddd8877777dddddd77777dddddddddddddddd6666666666666666ddddddddddddddddeeeeeeeeeeeeeeee
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeeccccc00ccccceeee888888008888eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeecccc0880cccceeee888880708888eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeecccc0000cccceeee888880700888eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeecccc0560cccceeee888807770088eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeecccc5750cccceeee880070770088eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeecccc0560cccceeee807777770088eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeeccc006600ccceeee807777770888eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeecc05066050cceeee800077770088eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeecccc0660cccceeee888807770088eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeeccccc00ccccceeee888807770888eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeecccc8998cccceeee888007777088eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+ee111111111111eeee666666666666eeeeccccc88ccccceeee880000000008eedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
+eeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeedddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
@@ -752,16 +1177,8 @@ ee000e00eee0e0e0eee0e0e0eee00e00eee00e000000ee00eee0e000e0e00ee00000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 00000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 
-__map__
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000300030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000004000003000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000300030000030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000000000003000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
-0000000300030000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 __sfx__
-000e00000400601005040060200102005090010200504005020050b005030050200700005090050200503007020040700500005040050300509006050040b0050200405006020050200500005010040200401004
+000e00001010511105101050e1050e10612104141051410414106141051410514105141041410414104141001310013100121001210012100111000f1000e1000c1000a1000a1000a1000a300093000830008300
 001000002c00027100261002510010000100002110022100221002410027100291002a1002b1002b1001b1001d1001f10021100231003110025100251002b1002810021100331001800000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
 001000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000
