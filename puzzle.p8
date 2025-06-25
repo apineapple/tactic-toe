@@ -10,6 +10,10 @@ __lua__
 --enter code for lvl editor
 --custom="110222332"
 
+--get your level code
+--mycode=true
+
+
 
 
 
@@ -181,7 +185,7 @@ palette
 crane
 120560
 match
-110220330442552461223454121332511544
+110220330442551461223454121332511544
 double
 520560232121131242141332432442
 metaundo
@@ -221,7 +225,7 @@ bubble
 shy
 110325425555452342
 wrap
-560443455465335135515]],
+650643443455465335135515]],
 
 
 --level pack 8 "no."
@@ -339,6 +343,14 @@ orwell circumnavigates
 	end
 	
 	elvl=custom or elvl
+	
+	if mycode then
+		cls()
+		printh(elvl, '@clip')
+ 	?"code copied to clipboard"
+ 	?elvl
+		stop()
+	end
 	palt(0,false)
 	palt(13,true)
 -->8
@@ -360,7 +372,7 @@ end
 
 function title()
  ?"\t\t\f1\#ever:1.0\n\n\n\n\n\n\n\n\fe\#1by bens",70,3
- ?"\f7\^w\^ actic\noe",51,43
+ ?"\f7\^wactic\noe",51,43
 	tim=flr(time())%2
  pal(6,1)
  te(0) 
@@ -368,7 +380,15 @@ function title()
  te(2*tim)
 	rectfill(0,94,128,113,10)
 	rectfill(0,95,127,112,14)
- for i=2,#lvls do if dget(i)==#lvls[i]/2 then spr(2,5,10*i-17) end end
+ local j=0
+ for i=2,#lvls do 
+ 	if dget(i)==#lvls[i]/2 then 
+ 		spr(2,5,10*i-17)
+ 		j+=1
+ 	end
+ end
+ if (j==8) spr(188,5,83)
+ 
 	?"\f1\^w\^ "..tops[t_mode+1],51,102
 	?"\fa\^w\^ "..tops[t_mode+1],50,101
 	?"\^x3\f6<\f7<",38-tim,102
@@ -477,7 +497,6 @@ function tutorial()
 end
 
 function editor()
-	printh(elvl, '@clip')
 	set_b({"your level!",elvl})
 	
 	dset(10,ceil(#elvl/4))
@@ -1242,7 +1261,7 @@ function swatch(s,v)
 	
 	if mlclk() then
 		if clock then
-			if v==5 and vb and b[vb][3]==1 then
+			if v==4 and vb and b[vb][3]==1 then
 				b[vb][3]=s[clock]
 			elseif v==3 and not vb and inbounds(x,y) and (x!=1 or y!=2) and (x!=5 or y!=6)  then
 				add(b,{x,y,s[clock]})
@@ -1256,13 +1275,13 @@ function swatch(s,v)
 			end
 			clock=nil
 		else
-			for i=1,#s do
+			for i=1,v do
 				if (eq({x,y},{7,i}) and s[i]) clock=i
 			end
 		end 
 	elseif mlrlk() and not lock and #un2>0 and un2[#un2][4]>#un then
 		s[un2[#un2][2]]=un2[#un2][1]
-		if (v==5) b[un2[#un2][3]][3]=1
+		if (v==4) b[un2[#un2][3]][3]=1
 		if (v==3) deli(b,un2[#un2][3])
 		deli(un2,#un2)
 	end
@@ -1273,8 +1292,8 @@ function swatch(s,v)
 end
 
 function palette()
-	if (#un2==0) swa={2,2,3,3,4}
-	swatch(swa,5)
+	if (#un2==0) swa={2,2,3,4}
+	swatch(swa,4)
 end
 
 function crane()
@@ -1797,10 +1816,10 @@ dddc11111111111cc11111111111cddddddddddddddddddddddddddddddddddddddddddddddddddd
 dddc111119a7111cc1117a911111cddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd
 dddc11119aaa711cc117aaa91111cddddddddddddeeedddddddddddddddddddddddddddddddddddddd66dd6666dd66dddddddddddddddddddddddddddddddddd
 dddc11119aaaa11cc11aaaa91111cddddddddddeeaaaeedddddddddddddddddddddddddddddddddddd66dd6666dd66dddddddddddddddddddddddddddddddddd
-dddc111119aa111cc111aa911111cddddddddeeaaaaaaaeedddddddddddddddddddd66666666dddddd66dddddddd66dddddddddddddddddddddddddddddddddd
+dddc111119aa111cc111aa911111cddddddddeeaaaaaaaeedddddddddddddddddddd66666666dddddd66dddddddd66ddddadaddddddddddddddddddddddddddd
 dddc11111111111cc11111111111cddddddeeaa17aaa17aaeedddddddddddddddddd66666666dddddd66dddddddd66dddddddddddddddddddddddddddddddddd
-dddc11111111111cc11111111111cddddeeaaaa11aaa11aaaaeedddddddddddddd66dddddddd66dddddd66666666dddddddddddddddddddddddddddddddddddd
-dddc11111111111cc11111111111cdddeaaaaaaaaaaaaaaaaaaaeddddddddddddd66dddddddd66dddddd66666666dddddddddddddddddddddddddddddddddddd
+dddc11111111111cc11111111111cddddeeaaaa11aaa11aaaaeedddddddddddddd66dddddddd66dddddd66666666dddddadddadddddddddddddddddddddddddd
+dddc11111111111cc11111111111cdddeaaaaaaaaaaaaaaaaaaaeddddddddddddd66dddddddd66dddddd66666666ddddddaaaddddddddddddddddddddddddddd
 dddc1111111111cddc1111111111cddddeeeaaaaaaaaaaaaaeeedddddddddddddd66dd6666dd66dddddddddddddddddddddddddddddddddddddddddddddddddd
 dddc1111111cccddddccc1111111cdddddddeeeaa111aaaeeddddddddddddddddd66dd6666dd66dddddddddddddddddddddddddddddddddddddddddddddddddd
 dddc11111ccddddddddddcc11111cddddddddddeeeaaeeeddddddddddddddddddddddddddeeedddddddddddddddddddddddddddddddddddddeeedddddddddddd
