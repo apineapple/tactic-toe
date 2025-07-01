@@ -215,7 +215,7 @@ eye
 toggle
 260111132141222325335345
 quarter
-330325325312355245361255452
+330325325312355245361255451
 bulldozer
 560211231225242442451342141551
 glue
@@ -264,15 +264,15 @@ josh's level
 350421522613431621701561511]]
 },
 split([[
-only key blocks win
+only key can win
 win efficiently
 no one can move
 change with each step
-undo actions in reverse
+undo in reverse
 symmetry is key
 every step counts
 2 for 1
-blocks can share space
+blocks share space
 place types on blocks
 place blocks
 goals have types
@@ -288,7 +288,7 @@ orwell is everywhere
 
 orwell loves diagonals
 
-orwell needs space
+orwell pushed 2 away
 
 orwell sees ghosts
 
@@ -1371,10 +1371,10 @@ function cube()
 	
 	if mt>80 then
 		m3x,m3y=mx(),my()
-		if (btn(➡️)) m3x+=3
-		if (btn(⬅️)) m3x-=3
-		if (btn(⬆️)) m3y-=3
-		if (btn(⬇️)) m3y+=3
+		if (btn(➡️)) m3x+=4
+		if (btn(⬅️)) m3x-=4
+		if (btn(⬆️)) m3y-=4
+		if (btn(⬇️)) m3y+=4
 	end
 	if (mt<80) m3x,m3y=nil,nil
 	
